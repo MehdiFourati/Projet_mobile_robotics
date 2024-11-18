@@ -76,6 +76,7 @@ def get_starting_position(frame):
     Output: 
         - center_x, center_y: coordinates of the center of the robot
         - alpha: angle of the robot relative to the x axis, counterclockwise, expressed in radian in range (-pi, pi]
+        - robot_width: integer width of the robot, in pixel
     """
     # to avoid overwriting the input
     copy = frame.copy()
@@ -86,6 +87,9 @@ def get_starting_position(frame):
     contours, _ = cv.findContours(thresholded, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
 
     c = get_largest_contours(contours)
+
+    tilted_rect = cv.minAreaRect(c)
+    robot_width = int(max(tilted_rect[1]))
 
     # approximate the contour roughly and more precisely
     epsilon = 0.01 # precision of polygonal approximation, smaller is more precise (TO OPTIMIZE)
@@ -121,7 +125,7 @@ def get_starting_position(frame):
     # compute the angle interpreting y as the imaginary axis to get the complex argument
     alpha = np.angle([direction_x - center_x - (direction_y - center_y)*1j]) # minus sign for complex part because y-axis going downward
     
-    return center_x, center_y, alpha
+    return center_x, center_y, alpha, robot_width
 
 
 def get_obstacles(frame):
