@@ -70,7 +70,7 @@ def get_fop(frame, original_coordinates, new_coordinates):
 
 def get_starting_position(frame):
     """
-    Find the starting position and angle of the robot
+    Find the starting position, angle and width of the robot
     Input: 
         - frame: corrected rectangular FOP
     Output: 
@@ -88,6 +88,7 @@ def get_starting_position(frame):
 
     c = get_largest_contours(contours)
 
+    # get the largest side of the tilted rectangle to get the robot width
     tilted_rect = cv.minAreaRect(c)
     robot_width = int(max(tilted_rect[1]))
 
@@ -206,6 +207,9 @@ def get_robot_center(frame):
     gray_frame = cv.cvtColor(copy, cv.COLOR_BGR2GRAY)
     _, thresholded = cv.threshold(gray_frame,170,255,cv.THRESH_BINARY)
     contours, _ = cv.findContours(thresholded, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
+
+    if len(contours) == 0:
+        return 0, 0
 
     c = get_largest_contours(contours)
 
