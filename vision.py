@@ -1,8 +1,10 @@
 import cv2 as cv
 import numpy as np
+import math
 
 from utils.utils_vision import get_largest_contours
 from utils.utils_vision import get_contour_center
+from utils.utils_vision import get_further_vertices
 
 
 def get_fop_coordinates(frame):
@@ -129,13 +131,14 @@ def get_starting_position(frame):
     return center_x, center_y, alpha, robot_width
 
 
-def get_obstacles(frame):
+def get_obstacles(frame, robot_width):
     """
     Find the polygonal approximation of the obstacles
     Input: 
         - frame: corrected rectangular FOP
+        - robot_width: width of the robot
     Output: 
-        - polygonal_obstacles: list of arrays of vertices of each obstacles' polygonal approximation
+        - further_vertices: lists of arrays of vertices of each obstacles' polygonal approximation, computed to avoid crashing
     """
     # to avoid overwriting the input
     copy = frame.copy()
@@ -160,7 +163,10 @@ def get_obstacles(frame):
         
         polygonal_obstacles.append([approximation])
 
-    return polygonal_obstacles
+        # compute the vertices further away to avoid crashing
+        further_vertices = get_further_vertices(copy, robot_width, polygonal_obstacles)
+        
+    return further_vertices
 
 
 def get_objective(frame):
@@ -214,5 +220,96 @@ def get_robot_center(frame):
     c = get_largest_contours(contours)
 
     center_x, center_y = get_contour_center(c)
-    
+
     return center_x, center_y
+
+""" # Vision example on an image
+
+# load the image
+img = cv.imread("testing_vision.jpg")
+img = cv.resize(img, (640,480), interpolation=cv.INTER_CUBIC) 
+
+# do the actual vision
+_, _, _, robot_width = get_starting_position(img)
+
+obstacles = get_obstacles(img, 62)
+
+# draws everything and displays it
+output = img.copy()
+
+for obstacle in obstacles:
+    for vertice in obstacle:
+        cv.circle(output, (vertice[0],vertice[1]), radius=5, color=(0, 255, 0), thickness=-1)
+
+
+cv.imshow("image", output)
+
+# press any key to close all windows
+cv.waitKey(0) 
+cv.destroyAllWindows()  """
+
+""" # create a mask with the obstacles white and the rest black
+    _, black_frame = cv.threshold(copy[:,:,0],255,255,cv.THRESH_BINARY)
+    obstacle_mask = black_frame.copy()
+    for polygon in polygonal_obstacles:
+        cv.drawContours(obstacle_mask, polygon, -1, (255, 255, 255), -1)
+
+    # get the vertices further away to avoid crashing in the obstacle
+    further_vertices = []
+    # loop over the obstacles
+    for polygon in polygonal_obstacles:
+        
+        polygon_vertices = []
+        # loop over the points of each obstacle
+        for i in range(len(polygon[0])): # [0] because of the shape
+            
+            # get the coordinate of a point
+            previous_x = polygon[0][i][0][0]
+            previous_y = polygon[0][i][0][1]
+            # get the next point
+            origin_x = polygon[0][(i+1)%len(polygon[0])][0][0] 
+            origin_y = polygon[0][(i+1)%len(polygon[0])][0][1]
+            # get the second next point
+            next_x = polygon[0][(i+2)%len(polygon[0])][0][0] 
+            next_y = polygon[0][(i+2)%len(polygon[0])][0][1]
+            
+            # use the angle bisector theorem
+            vect_next = math.sqrt((next_x - origin_x)**2 + (next_y - origin_y)**2)
+            vect_previous = math.sqrt((previous_x - origin_x)**2 + (previous_y - origin_y)**2)
+            vect_opposite = math.sqrt((next_x - previous_x)**2 + (next_y - previous_y)**2)
+            previous_opposite = vect_opposite/(1+vect_next/vect_previous)
+            next_opposite = vect_opposite/(1+vect_previous/vect_next)
+
+            # get the coordinates of intersection between the bisector and the opposite side
+            black_frame_1 = black_frame.copy()
+            black_frame_2 = black_frame.copy()
+            cv.circle(black_frame_1, (previous_x,previous_y), radius=int(previous_opposite), color=(255, 255, 255), thickness=2)
+            cv.circle(black_frame_2, (next_x,next_y), radius=int(next_opposite), color=(255, 255, 255), thickness=2)            
+            intersection = black_frame_1 & black_frame_2
+            contours, _ = cv.findContours(intersection, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
+            center_x, center_y = get_contour_center(contours[0])
+
+            opposite_x = origin_x - 5*(center_x-origin_x)
+            opposite_y = origin_y - 5*(center_y-origin_y)
+            
+            black_frame_line = black_frame.copy()
+            cv.line(black_frame_line,(center_x +5*(center_x-origin_x),center_y+5*(center_y-origin_y)),(opposite_x,opposite_y),(255,255,255),1)
+            
+            outside_obstacle = black_frame_line ^ obstacle_mask
+            outside_obstacle = outside_obstacle - obstacle_mask
+
+            width_mask = black_frame.copy()
+            cv.circle(width_mask, (origin_x,origin_y), radius=int(robot_width/1.8), color=(255, 255, 255), thickness=1)
+
+            outside_point = width_mask & outside_obstacle
+            outside_point = outside_point - (outside_point & obstacle_mask)
+
+            outside_coordinates, _ = cv.findContours(outside_point, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
+
+            # if vertice is out of bounds throw it away
+            try:
+                polygon_vertices.append(outside_coordinates[0][0][0])
+            except:
+                continue
+
+        further_vertices.append(polygon_vertices) """
