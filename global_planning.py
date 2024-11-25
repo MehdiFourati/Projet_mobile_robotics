@@ -26,19 +26,15 @@ class goal:
         self.center_x = center_x
         self.center_y = center_y
 
-def get_obstacle_points_dict(frame):
-    """
-    Generate a dictionary of obstacle points from the frame.
-    """
-    # Get the list of Obstacle objects
-    obstacles = vision.get_obstacles(frame)
-    
-    obstacle_corners_dict = {}
-    for i, obstacle in enumerate(obstacles):
-        
-        obstacle_corners_dict[i] = obstacle.points
+def obstacle_dictionnary(obstacles):                                               #to be removed (not)
+    """Takes points given by camera and creates a dictionnary with object 
+    name as key associated to a list of points"""
+    obstacle_dict = {}
+    for i, points_list in enumerate(obstacles):
+        if len(points_list) == 4:
+            obstacle_dict[f'obstacle_{i+1}'] = points_list
+    return obstacle_dict
 
-    return obstacle_corners_dict
 
 def get_robot_coordinates(frame, robot):                     #optional ?
 
@@ -67,12 +63,12 @@ def naming_points(object_corners, robot, goal):
     to point coordinates"""  
     
     point_list_named = {}
-    j = 0
+    i = 0
 
-    for obj_id, points_list in object_corners.items():
+    for _, points_list in object_corners.items():
         for point in points_list:
-            point_list_named[f'P{j}'] = point
-            j += 1
+            point_list_named[f'P{i}'] = point
+            i += 1
     point_list_named['R']= robot.center_x, robot.center_y
     point_list_named['G']= goal
     return point_list_named
@@ -197,14 +193,6 @@ def Is_connected(point1, point2,obstacle_corners,Robot,goal):
                             return False
     return True
 
-def create_dictionnary(objects):                                               #to be removed
-    """Takes points given by camera and creates a dictionnary with object 
-    name as key associated to a list of points"""
-    object_dict = {}
-    for i, pts_list in enumerate(objects):
-        if len(pts_list) == 4:
-            object_dict[f'object_{i+1}'] = pts_list
-    return object_dict
 
 def creating_adjacency_list(object_corners,robot,goal):
     """Creates a dictionnary with point name as key associated to a list 
