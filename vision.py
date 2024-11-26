@@ -37,8 +37,8 @@ def get_fop_coordinates(frame):
     
     # approximate the field of play to a polygon with 4 vertices
     epsilon = 0.05 # precision of polygonal approximation, smaller is more precise (TO OPTIMIZE)
-    perimeter = cv.arcLength(c, True)
-    approximation = cv.approxPolyDP(c, epsilon * perimeter, True)
+    perimeter = cv.arcLength(c, True) # True means closed contour
+    approximation = cv.approxPolyDP(c, epsilon * perimeter, True) # 2nd parameter: maximum distance from contour to approximation
     original_coordinates = [approximation[0][0], approximation[1][0], approximation[2][0], approximation[3][0]]
 
     # sort the vertices by the sum of their components. If camera set correctly [tl, bl, tr, br]
@@ -143,7 +143,7 @@ def get_obstacles(frame, robot_width):
     # to avoid overwriting the input
     copy = frame.copy()
 
-    # threshold on the background color and find the contour of the shape set to 0
+    # threshold on the background color and find the contour of the shapes set to 0
     _, thresholded = cv.threshold(copy[:,:,0],127,255,cv.THRESH_BINARY)
     contours, _ = cv.findContours(thresholded, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
 
