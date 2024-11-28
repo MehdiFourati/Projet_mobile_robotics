@@ -26,9 +26,8 @@ class goal:
         self.center_x = center_x
         self.center_y = center_y
 
-def obstacle_dictionnary(obstacles):                                               #to be removed (not)
-    """Takes points given by camera and creates a dictionnary with object 
-    name as key associated to a list of points"""
+def obstacle_dictionnary(obstacles):                                             
+    """Returns a dictionnary with key : obstacle, value : coordinates"""
     obstacle_dict = {}
     for i, points_list in enumerate(obstacles):
         if len(points_list) == 4:
@@ -36,7 +35,7 @@ def obstacle_dictionnary(obstacles):                                            
     return obstacle_dict
 
 
-def get_robot_coordinates(frame, robot):                     #optional ?
+def get_robot_coordinates(frame, robot):                   
 
     center_x, center_y, alpha, robot_width = vision.get_starting_position(frame)
     
@@ -44,7 +43,7 @@ def get_robot_coordinates(frame, robot):                     #optional ?
 
     return center_x,center_y
 
-def get_goal_coordinates(frame, goal):                       #optional ?
+def get_goal_coordinates(frame, goal):                       
 
     center_x, center_y = vision.get_objective(frame)
     
@@ -59,8 +58,7 @@ def calculate_distance(point1, point2):
 
 
 def naming_points(object_corners, robot, goal):
-    """Gives a name to every point. Creates a dictionnary with names as key, associated 
-    to point coordinates"""  
+    """Returns a dictionary with key : point names, value : coordinates"""  
     
     point_list_named = {}
     i = 0
@@ -69,12 +67,14 @@ def naming_points(object_corners, robot, goal):
         for point in points_list:
             point_list_named[f'P{i}'] = point
             i += 1
+
     point_list_named['R']= robot.center_x, robot.center_y
     point_list_named['G']= goal
+
     return point_list_named
 
 def InsideLine(point1, point2, point3): 
-    """For 3 collinear points, we search if the 3rd point lies in the segment of the first two points"""
+    """If the 3 given points are colinear, return true if the 3rd point lies in the segment of the first two points"""
     x1, y1 = point1
     x2, y2 = point2
     x3, y3 = point3
@@ -87,7 +87,7 @@ def orientation(p1,p2,p3):
     x1, y1 = p1
     x2, y2 = p2
     x3, y3 = p3
-    orientation_value = (y2-y1)*(x3-x2)-(y3-y2)*(x2-x1)         # got it from this site : https://www.geeksforgeeks.org/orientation-3-ordered-points/
+    orientation_value = (x3-x2)*(y2-y1)-(x2-x1)*(y3-y2)       # got it from this site : https://www.geeksforgeeks.org/orientation-3-ordered-points/
     # Check if the orientation is respectively collinear, clockwise, or counterclockwise. To be used later for intersections.
     if orientation_value == 0:
         return 0  
@@ -97,7 +97,7 @@ def orientation(p1,p2,p3):
         return 1 
 
 def isIntersection(p1,p2,p3,p4):
-    """function that checks if two line intersect with each other"""
+    """Function that checks if two line intersect with each other"""
     
     o1=orientation(p1,p2,p3)
     o2=orientation(p1,p2,p4)
@@ -116,97 +116,95 @@ def isIntersection(p1,p2,p3,p4):
     # Checking colinearity in every case + if the third point is inside the segment
     if ((o1 == 0) and InsideLine(p1, p2, p3)): 
         return True
-   
     if ((o2 == 0) and InsideLine(p1, p2, p4)): 
         return True
-  
     if ((o3 == 0) and InsideLine(p3, p4, p1)): 
         return True
-
     if ((o4 == 0) and InsideLine(p3, p4, p2)): 
         return True
     
     return False 
 
 def obstacle_points_named(object_corners):
-    """Creates a dictionnary with the obstacle name as key, associated to a list of points names representing each of its corners"""
+    """Returns a dictionnary with key : ostacle, value : point names """
     obstacle_names = {}  
     i = 0 
-
-    for obj_id, points in object_corners.items():
-        obstacle_names[obj_id] = []
+    for obstacle_id, points in object_corners.items():
+        obstacle_names[obstacle_id] = []
         for _ in points:
-            obstacle_names[obj_id].append(f'P{i}')
+            obstacle_names[obstacle_id].append(f'P{i}')
             i += 1
 
     return obstacle_names
 
-def Is_connected(point1, point2,obstacle_corners,Robot,goal):
-    """Checks if two points are connected to each other"""
+def Point_connection(point1, point2,obstacle_corners,Robot,goal):
+    """Returns true if two points are connected by a straight line"""
     
-    point_named = naming_points(obstacle_corners,Robot,goal)
-    coordinates = {v: k for k, v in point_named.items()} #New dictionary inverting the keys and values of point_names
+    points_named = naming_points(obstacle_corners,Robot,goal)
+    coordinates = {v: k for k, v in points_named.items()}       #New dictionary inverting the keys and values of points_names
     obstacle_points = obstacle_points_named(obstacle_corners)
 
-    P1= coordinates[point1] #P1 is the name of the point1
-    P2= coordinates[point2] #P2 is the name of the point2
+    # now let's get the names of the given points
 
-    for _, points in obstacle_points.items():
-        if P1 in points and P2 in points:
+    P1= coordinates[point1] 
+    P2= coordinates[point2] 
+
+    for _, point_list in obstacle_points.items():
+        if P1 in point_list and P2 in point_list:
             #If the points are adjacent, they are connected
-            if abs(points.index(P1)-points.index(P2))==1:
+            if abs(point_list.index(P1)-point_list.index(P2))==1:
                 return True
-            #If the points are adjacent but one is the first item and the other is the last item 
-            if points.index(P1)==len(points)-1 and points.index(P2)==0:
+            #If the points are adjacent but one is the first item and the other is the last item in the list
+            if point_list.index(P1)==len(point_list)-1 and point_list.index(P2)==0:
                 return True
-            if points.index(P2)==len(points)-1 and points.index(P1)==0:
+            if point_list.index(P2)==len(point_list)-1 and point_list.index(P1)==0:
                 return True
-            #If points in same object but are not adjacent, they are not connected
+            #If the points are in same object but are not adjacent, they are not connected
             return False
 
     #We go through all objects and check if the line between point1 and point2 
     #intersects with any other line between two other points
-    for _, points in obstacle_corners.items():
-        for i in range(len(points)):
-            if i == (len(points) - 1): # the last point of a an obstacle
-                if isIntersection(point1, point2, points[i], points[0]):
+    for _, point_list in obstacle_corners.items():
+        for i in range(len(point_list)):
+            if i == (len(point_list) - 1): # the last point of a an obstacle
+                if isIntersection(point1, point2, point_list[i], point_list[0]):
                     return False
             else:
                 #Ignore the points if they are equal to point1 or point2
-                if points[i] == point1 or points[i+1] == point2:
+                if point_list[i] == point1 or point_list[i+1] == point2:                    #always used in order
                     continue
                 else:
-                    if isIntersection(point1, point2, points[i], points[i + 1]):
+                    if isIntersection(point1, point2, point_list[i], point_list[i + 1]):
                         return False
                     
     if (P1 == 'R' or P2 == 'R'):
-        for _, points in obstacle_corners.items():
-            for i in range(len(points)):
-                if i == (len(points) - 1):
-                    if isIntersection(point1, point2, points[i], points[0]): #same as above
+        #same as above
+        for _, point_list in obstacle_corners.items():
+            for i in range(len(point_list)):
+                if i == (len(point_list) - 1):
+                    if isIntersection(point1, point2, point_list[i], point_list[0]): 
                         return False
                 else:
-                    if points[i] == point1 or points[i+1] == point2:
+                    if point_list[i] == point1 or point_list[i+1] == point2:         
                         continue
                     else:
-                        if isIntersection(point1, point2,points[i], points[i + 1]):
+                        if isIntersection(point1, point2,point_list[i], point_list[i + 1]):
                             return False
     return True
 
 
-def creating_adjacency_list(object_corners,robot,goal):
-    """Creates a dictionnary with point name as key associated to a list 
-    of points names connected to it"""
+def creating_adjacency_dictionnary(object_corners,robot,goal):
+    """Returns a dictionnary with key: point names, values: point names that are connected to the key"""
     points_named = naming_points(object_corners,robot,goal)
-    adjacency_list = {}
+    adjacency_dict = {}
 
     for P1, point1 in points_named.items():
-        adjacency_list[P1] = []
+        adjacency_dict[P1] = []
         for P2, point2 in points_named.items():
             if P1 != P2:
-                if Is_connected(point1, point2, object_corners,robot,goal):
-                    adjacency_list[P1].append(P2)
-    return adjacency_list
+                if Point_connection(point1, point2, object_corners,robot,goal):
+                    adjacency_dict[P1].append(P2)
+    return adjacency_dict
 
 def calculating_distances(adjacency_list, points_named):
     """Creating a dictionnary with 2 connected points as key, associated with the euclidean distance between them"""
@@ -228,11 +226,11 @@ def get_dist(distances, point1, point2):
         if points[0] == point1 and points[1] == point2:
             return dist
         
-def dijkstra(adjacency_list, points_named):
+def dijkstra(adjacency_dict, points_named):
     shortest_dist = {} #store the best-known cost of visiting each point in the graph starting from start
     previous_nodes = {} #store the previous node of the current best known path for each node
     unvisited_nodes = list(points_named.keys())
-    distances = calculating_distances(adjacency_list, points_named)
+    distances = calculating_distances(adjacency_dict, points_named)
     # We need to set every distance to infinity(~ unreachable at the start). We will simulate that using a very large value     
     infinity = 10e10
     for node in points_named.keys():
@@ -245,7 +243,7 @@ def dijkstra(adjacency_list, points_named):
             if shortest_dist[node] < shortest_dist[current_min_node]:
                 current_min_node = node
         # We then retrieve the current node's neighbors and updates its distances
-        neighbors = adjacency_list[current_min_node]
+        neighbors = adjacency_dict[current_min_node]
         for neighbor in neighbors:
             test = shortest_dist[current_min_node] + get_dist(distances,current_min_node, neighbor)
             if test < shortest_dist[neighbor]:
