@@ -1,6 +1,5 @@
 import cv2 as cv
 import numpy as np
-import math
 
 from utils.utils_vision import get_largest_contours
 from utils.utils_vision import get_contour_center
@@ -70,9 +69,9 @@ def get_fop(frame, original_coordinates, new_coordinates):
     return fop
 
 
-def get_starting_position(frame):
+def get_robot_position(frame):
     """
-    Find the starting position, angle and width of the robot
+    Find the position, angle and width of the robot
     Input: 
         - frame: corrected rectangular FOP
     Output: 
@@ -196,54 +195,3 @@ def get_objective(frame):
     objective_x, objective_y = get_contour_center(c)
 
     return objective_x, objective_y
-
-
-def get_robot_center(frame):
-    """
-    Find the center of the robot
-    Input: 
-        - frame: corrected rectangular FOP
-    Output: 
-        - center_x, center_y: coordinates of the center of the robot
-    """
-    # to avoid overwriting the input
-    copy = frame.copy()
-
-    # threshold on the grayscale image and find the contour of the white shapes
-    gray_frame = cv.cvtColor(copy, cv.COLOR_BGR2GRAY)
-    _, thresholded = cv.threshold(gray_frame,170,255,cv.THRESH_BINARY)
-    contours, _ = cv.findContours(thresholded, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
-
-    if len(contours) == 0:
-        return 0, 0
-
-    c = get_largest_contours(contours)
-
-    center_x, center_y = get_contour_center(c)
-
-    return center_x, center_y
-
-""" # Vision example on an image
-
-# load the image
-img = cv.imread("testing_vision.jpg")
-img = cv.resize(img, (640,480), interpolation=cv.INTER_CUBIC) 
-
-# do the actual vision
-_, _, _, robot_width = get_starting_position(img)
-
-obstacles = get_obstacles(img, 62)
-
-# draws everything and displays it
-output = img.copy()
-
-for obstacle in obstacles:
-    for vertice in obstacle:
-        cv.circle(output, (vertice[0],vertice[1]), radius=5, color=(0, 255, 0), thickness=-1)
-
-
-cv.imshow("image", output)
-
-# press any key to close all windows
-cv.waitKey(0) 
-cv.destroyAllWindows()  """
