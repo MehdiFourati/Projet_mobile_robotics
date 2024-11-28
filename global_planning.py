@@ -30,7 +30,7 @@ def obstacle_dictionnary(obstacles):
     """Returns a dictionnary with key : obstacle, value : coordinates"""
     obstacle_dict = {}
     for i, points_list in enumerate(obstacles):
-        if len(points_list) == 4:
+        #if len(points_list) == 4:
             obstacle_dict[f'obstacle_{i+1}'] = points_list
     return obstacle_dict
 
