@@ -144,7 +144,7 @@ def get_obstacles(frame, robot_width):
     copy = frame.copy()
 
     # threshold on the background color and find the contour of the shapes set to 0
-    _, thresholded = cv.threshold(copy[:,:,0],127,255,cv.THRESH_BINARY)
+    _, thresholded = cv.threshold(copy[:,:,0],70,255,cv.THRESH_BINARY)
     contours, _ = cv.findContours(thresholded, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
 
     polygonal_obstacles = []
@@ -153,7 +153,7 @@ def get_obstacles(frame, robot_width):
     for c in contours:
 
         # remove too small or too large contours (TO OPTIMIZE)
-        if cv.contourArea(c) > 50000 or cv.contourArea(c) < 10000: 
+        if cv.contourArea(c) > 50000 or cv.contourArea(c) < 5000: 
             continue
 
         # approximate the contour

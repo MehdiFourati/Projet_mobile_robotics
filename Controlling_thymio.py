@@ -22,7 +22,6 @@ def kidnapping(node):
     
     default_value = [0,0,20]
     combined_error = sum(abs(curr - default) for curr, default in zip(node.v.acc, default_value))
-    print(combined_error)
     if combined_error > 10:
         return True
     else:
