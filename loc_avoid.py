@@ -105,13 +105,13 @@ def side_obst(node, robot_instance, aw):
             robot_instance.update_front_prox(update_prox_values(node, aw))
         local_state = DEFAULT
 
-def local_avoidance(node, speed, robot_instance, aw):
+def local_avoidance(node,robot_instance, aw):
 
     # Updating new values for proximity sensors
     robot_instance.update_front_prox(update_prox_values(node,aw))  
 
     # Setting default speed 
-    set_speed(node, speed, speed, aw)
+    #set_speed(node, speed, speed, aw)               #TO BE REMOVED
 
     # Updating local state to do the corresponding avoidance
     update_local_state(robot_instance)  
