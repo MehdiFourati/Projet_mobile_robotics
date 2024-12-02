@@ -1,60 +1,37 @@
 import math 
 import vision
 import numpy as np
-from math import sqrt
 
 
 class Robot:
-    def __init__(self):
+    def _init_(self):
         self.center_x = None
         self.center_y = None
         self.alpha = None
         self.robot_width = None
+        self.front_prox = [0,0,0,0,0,0,0]  # Values front prox.horizontal
 
     def update_coordinates(self, center_x, center_y, alpha, robot_width):
         self.center_x = center_x
         self.center_y = center_y
         self.alpha = alpha
         self.robot_width = robot_width
-
-class goal:
-    def __init__(self):
-        self.center_x = None
-        self.center_y = None
-
-    def update_coordinates(self, center_x, center_y):
-        self.center_x = center_x
-        self.center_y = center_y
+        
+    def update_front_prox(self, prox_values):
+        self.front_prox = prox_values
 
 def obstacle_dictionnary(obstacles):                                             
     """Returns a dictionnary with key : obstacle, value : coordinates"""
     obstacle_dict = {}
     for i, points_list in enumerate(obstacles):
-        #if len(points_list) == 4:
             obstacle_dict[f'obstacle_{i+1}'] = points_list
     return obstacle_dict
 
 
-def get_robot_coordinates(frame, robot):                   
-
-    center_x, center_y, alpha, robot_width = vision.get_starting_position(frame)
-    
-    robot.update_coordinates(center_x, center_y, alpha, robot_width)
-
-    return center_x,center_y
-
-def get_goal_coordinates(frame, goal):                       
-
-    center_x, center_y = vision.get_objective(frame)
-    
-    goal.update_coordinates(center_x, center_y)
-
-    return goal
-
 def calculate_distance(point1, point2):
     """Compute the euclidean distance between two given points"""
 
-    return sqrt((point1[0] - point2[0])**2 + (point1[1] - point2[1])**2)
+    return math.sqrt((point1[0] - point2[0])**2 + (point1[1] - point2[1])**2)
 
 
 def naming_points(object_corners, robot, goal):
@@ -82,31 +59,33 @@ def InsideLine(point1, point2, point3):
         return True
     return False
 
-def orientation(p1,p2,p3):
+def orientation(point1,point2,point3):
     """Defines the orientation of the three given points"""
-    x1, y1 = p1
-    x2, y2 = p2
-    x3, y3 = p3
-    orientation_value = (x3-x2)*(y2-y1)-(x2-x1)*(y3-y2)       # got it from this site : https://www.geeksforgeeks.org/orientation-3-ordered-points/
+    x1, y1 = point1
+    x2, y2 = point2
+    x3, y3 = point3
+
+    orientation = (x3-x2)*(y2-y1)-(x2-x1)*(y3-y2) # got it from this site : https://www.geeksforgeeks.org/orientation-3-ordered-points/
+
     # Check if the orientation is respectively collinear, clockwise, or counterclockwise. To be used later for intersections.
-    if orientation_value == 0:
+    if orientation == 0:
         return 0  
-    elif orientation_value > 0:
+    elif orientation > 0:
         return -1
     else:
         return 1 
 
-def isIntersection(p1,p2,p3,p4):
+def isIntersection(point1,point2,point3,point4):
     """Function that checks if two line intersect with each other"""
     
-    o1=orientation(p1,p2,p3)
-    o2=orientation(p1,p2,p4)
-    o3=orientation(p3,p4,p1)
-    o4=orientation(p3,p4,p2)
+    o1=orientation(point1,point2,point3)
+    o2=orientation(point1,point2,point4)
+    o3=orientation(point3,point4,point1)
+    o4=orientation(point3,point4,point2)
 
     #If two points are equal, we do not consider them as intersecting since it is the case where 
     #the points belongs to the same object, and this case is taken care of later.
-    if p1==p3 or p1==p4 or p2==p3 or p2==p4:
+    if point1==point3 or point1==point4 or point2==point3 or point2==point4:
         return False
     
     # If o1 and o2 are different and o3 and o4 are different, then the points intersect
@@ -114,19 +93,19 @@ def isIntersection(p1,p2,p3,p4):
         return True
     
     # Checking colinearity in every case + if the third point is inside the segment
-    if ((o1 == 0) and InsideLine(p1, p2, p3)): 
+    if ((o1 == 0) and InsideLine(point1, point2, point3)): 
         return True
-    if ((o2 == 0) and InsideLine(p1, p2, p4)): 
+    if ((o2 == 0) and InsideLine(point1, point2, point4)): 
         return True
-    if ((o3 == 0) and InsideLine(p3, p4, p1)): 
+    if ((o3 == 0) and InsideLine(point3, point4, point1)): 
         return True
-    if ((o4 == 0) and InsideLine(p3, p4, p2)): 
+    if ((o4 == 0) and InsideLine(point3, point4, point2)): 
         return True
     
     return False 
 
 def obstacle_points_named(object_corners):
-    """Returns a dictionnary with key : ostacle, value : point names """
+    """Returns a dictionnary with key : ostacle names, value : point names """
     obstacle_names = {}  
     i = 0 
     for obstacle_id, points in object_corners.items():
@@ -141,8 +120,11 @@ def Point_connection(point1, point2,obstacle_corners,Robot,goal):
     """Returns true if two points are connected by a straight line"""
     
     points_named = naming_points(obstacle_corners,Robot,goal)
-    coordinates = {v: k for k, v in points_named.items()}       #New dictionary inverting the keys and values of points_names
     obstacle_points = obstacle_points_named(obstacle_corners)
+
+
+    coordinates = {v: k for k, v in points_named.items()}       #New dictionary inverting the keys and values of points_names
+    
 
     # now let's get the names of the given points
 
@@ -162,8 +144,8 @@ def Point_connection(point1, point2,obstacle_corners,Robot,goal):
             #If the points are in same object but are not adjacent, they are not connected
             return False
 
-    #We go through all objects and check if the line between point1 and point2 
-    #intersects with any other line between two other points
+    #We go through all objects and check if the line between the two given point  
+    #intersects with any other line between two other points from the same object
     for _, point_list in obstacle_corners.items():
         for i in range(len(point_list)):
             if i == (len(point_list) - 1): # the last point of a an obstacle
@@ -204,65 +186,76 @@ def creating_adjacency_dictionnary(object_corners,robot,goal):
             if P1 != P2:
                 if Point_connection(point1, point2, object_corners,robot,goal):
                     adjacency_dict[P1].append(P2)
+
     return adjacency_dict
 
-def calculating_distances(adjacency_list, points_named):
-    """Creating a dictionnary with 2 connected points as key, associated with the euclidean distance between them"""
-    distances = {}  # Dictionary to store distances between connected points
+def calculating_distances(adjacency_dict, points_named):
+    """Returns a dictionnary with key: two connected points, value: distance between them"""
+    distance_dict = {}  
 
-    for point, connected_points in adjacency_list.items():
-        for connected_point in connected_points:
+    for point, connected_points in adjacency_dict.items():
+        for i in connected_points:
         
-            dist = calculate_distance(points_named[point], points_named[connected_point])
+            dist = calculate_distance(points_named[point], points_named[i])
     
-            distances[(point, connected_point)] = dist
-            distances[(connected_point, point)] = dist
+            distance_dict[(point, i)] = dist
+            distance_dict[(i, point)] = dist
     
-    return distances
+    return distance_dict
 
 def get_dist(distances, point1, point2):
-    """Finds the distance stored in the above dictionnary for two given points"""
-    for points, dist in distances.items():
-        if points[0] == point1 and points[1] == point2:
+    """Fetches the distance contained in the distance dictionnary for two given points"""
+    for node, dist in distances.items():
+        if node[0] == point1 and node[1] == point2:
             return dist
         
-def dijkstra(adjacency_dict, points_named):
-    shortest_dist = {} #store the best-known cost of visiting each point in the graph starting from start
-    previous_nodes = {} #store the previous node of the current best known path for each node
-    unvisited_nodes = list(points_named.keys())
-    distances = calculating_distances(adjacency_dict, points_named)
-    # We need to set every distance to infinity(~ unreachable at the start). We will simulate that using a very large value     
-    infinity = 10e10
-    for node in points_named.keys():
-        shortest_dist[node] = infinity
-    shortest_dist['R'] = 0
+def dijkstra_algo(adjacency_dict, points_named):
 
-    while unvisited_nodes:
-        current_min_node = unvisited_nodes[0]
-        for node in unvisited_nodes: # Iterate over the nodes
-            if shortest_dist[node] < shortest_dist[current_min_node]:
-                current_min_node = node
-        # We then retrieve the current node's neighbors and updates its distances
-        neighbors = adjacency_dict[current_min_node]
-        for neighbor in neighbors:
-            test = shortest_dist[current_min_node] + get_dist(distances,current_min_node, neighbor)
-            if test < shortest_dist[neighbor]:
-                shortest_dist[neighbor] = test
-                # We also update the best path to the current node
-                previous_nodes[neighbor] = current_min_node
-        unvisited_nodes.remove(current_min_node)
+    shortest_dist = {} 
+    previous_nodes = {} 
+    unvisited = list(points_named.keys())
+    distance_dict = calculating_distances(adjacency_dict, points_named)
+
+    # We need to set every distance to infinity(~ unreachable at the start). We will simulate that using a very large value     
+    for node in points_named.keys():
+        shortest_dist[node] = math.inf
+    shortest_dist['R'] = 0                # setting the start to zero
+
+    while unvisited:
+        current = unvisited[0]
+        for node in unvisited:
+            if shortest_dist[node] < shortest_dist[current]:
+                current = node
+        neighbors = adjacency_dict[current]
+        for i in neighbors:
+            test = shortest_dist[current] + get_dist(distance_dict,current, i)
+            if test < shortest_dist[i]:
+                shortest_dist[i] = test
+                previous_nodes[i] = current
+        unvisited.remove(current)
 
     return previous_nodes
 
 
-def finding_path(adjacency_list, point_names):
+def finding_path(adjacency_list, point_named):
     """Finds shortest_path using Dijkstra algorithm and returns a list containing the points names of the path 
        from the robot to the goal"""
-    previous_nodes = dijkstra(adjacency_list, point_names)
-    path = ['G']
+    previous_nodes = dijkstra_algo(adjacency_list, point_named)
+    shortest_path = ['G']
     current_node = 'G'
     while current_node != 'R':
         current_node = previous_nodes[current_node]
-        path.append(current_node)
-    path.reverse()
-    return path
+        shortest_path.append(current_node)
+    shortest_path.reverse()
+    return shortest_path
+
+
+def global_plan(raw_obstacle_corners,robot,goal):
+
+    obstacle_corners = [[tuple(arr) for arr in sublist] for sublist in raw_obstacle_corners]   # converting in the right format
+    obstacle_corners = obstacle_dictionnary(obstacle_corners)
+    adj_list = creating_adjacency_dictionnary(obstacle_corners,robot,goal)
+    points_named = naming_points(obstacle_corners,robot,goal)
+    path = finding_path(adj_list,points_named)
+
+    return path, points_named       #we return points_named for plotting
