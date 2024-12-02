@@ -1,6 +1,6 @@
-import global_planning
 import math
 import time
+import numpy as np
 
 program = """
 onevent speed
@@ -91,9 +91,74 @@ def compute_wheel_speeds(robot_pose, target_point, wheelbase, kp_angle, ki_angle
     return v_L, v_R
 
 
-    
+def get_linear_error(start_point, end_point, robot_center):
+    """
+    Get the euclidean distance between the robot and its optimal trajectory
+    Input:
+        - start_point: last point in the path the robot went through
+        - end_point: next point in the path
+        - robot_center: coordinates of the center of the robot
+    Output:
+        - linear_error: euclidean distance between the robot and its optimal trajectory
+    """
+    linear_error = np.linalg.norm(np.cross(end_point-start_point, start_point-robot_center))/np.linalg.norm(end_point-start_point)
 
-    
+    # if positive the point is on the left side, if negative the point is on the right side
+    side = (robot_center[0]-start_point[0])*(end_point[1]-start_point[1]) - (robot_center[1]-start_point[1])*(end_point[0]-start_point[0])
+
+    return linear_error * np.sign(side)
 
 
+def get_angular_error(start_point, end_point, robot_angle):
+    """
+    Get the angle between the robot direction and its optimal trajectory
+    Input:
+        - start_point: last point in the path the robot went through
+        - end_point: next point in the path
+        - robot_angle: angle of the robot
+    Output:
+        - angular_error: angle between the robot direction and its optimal trajectory, in radian between ]-pi;pi]
+    """
+    # compute the trajectory's angle
+    alpha = np.angle([end_point[0] - start_point[0] - (end_point[1] - start_point[1])*1j]) # minus sign for complex part because y-axis going downward
+    angular_error = alpha - robot_angle
 
+    if angular_error > math.pi:
+        angular_error -= 2*math.pi
+
+    if angular_error < math.pi:
+        angular_error += 2*math.pi 
+
+    return angular_error
+
+
+def PI_controller(error, kp, ki):
+    """
+    Use a PI controller to compute the system input to correct the robot's trajectory
+    Input:
+        - error: difference between optimal trajectory and actual one 
+        - kp: proportional gain of the controler
+        - ki: integral gain of the controler
+    Output:
+        - system_input: input to give to the robot
+    """
+    system_input = kp * error[-1] + ki * np.sum(error)
+
+    return system_input
+
+
+def reached_linear_target(end_point, robot_center, delta):
+    """
+    Check if the robot reached its next target point
+    Input:
+        - end_point: next target point of the robot
+        - robot_center: coordinates of the center of the robot
+    Output:
+        - True if the robot reach end_point, else False
+    """
+    remaining_path = np.sqrt((end_point[0]-robot_center[0])**2 + (end_point[1]-robot_center[1])**2)
+
+    if remaining_path < delta:
+        return True
+
+    return False    
