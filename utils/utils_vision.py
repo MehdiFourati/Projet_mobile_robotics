@@ -102,7 +102,7 @@ def get_further_vertices(frame, robot_width, polygonal_obstacles):
             outside_obstacle = black_frame_line ^ obstacle_mask
             outside_obstacle = outside_obstacle - obstacle_mask
             width_mask = black_frame.copy()
-            cv.circle(width_mask, (origin_x,origin_y), radius=int(robot_width/1.8), color=(255, 255, 255), thickness=1)
+            cv.circle(width_mask, (origin_x,origin_y), radius=int(robot_width), color=(255, 255, 255), thickness=1)
 
             # remove the intersections inside the obstacle to only have the one outside
             outside_point = width_mask & outside_obstacle

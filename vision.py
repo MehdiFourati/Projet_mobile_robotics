@@ -24,13 +24,18 @@ def get_fop_coordinates(frame):
     #thresholded = thresholded_blue ^ thresholded_green
     #thresholded = thresholded ^ thresholded_red
 
-    _, thresholded_green = cv.threshold(copy[:,:,1],127,255,cv.THRESH_BINARY)
+    _, thresholded_blue = cv.threshold(copy[:,:,0], 127,255,cv.THRESH_BINARY_INV)
+    #_, thresholded_green = cv.threshold(copy[:,:,1],140,255,cv.THRESH_BINARY)
     _, thresholded_red = cv.threshold(copy[:,:,2],127,255,cv.THRESH_BINARY)
 
-    thresholded = thresholded_green & thresholded_red
+    thresholded = thresholded_blue ^ thresholded_red
     thresholded = (255 - thresholded)
+    
+    #_, thresholded = cv.threshold(gray_frame,100,255,cv.THRESH_BINARY_INV)
+    #gray_frame = cv.cvtColor(copy, cv.COLOR_BGR2GRAY)
+    #thresholded = cv.adaptiveThreshold(gray_frame,255,cv.ADAPTIVE_THRESH_GAUSSIAN_C,cv.THRESH_BINARY_INV,43,3)
 
-    contours, _ = cv.findContours(thresholded, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
+    contours, _ = cv.findContours(thresholded_blue, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
 
     c = get_largest_contours(contours)
     
@@ -64,8 +69,8 @@ def get_fop(frame, original_coordinates, new_coordinates):
         - fop: corrected rectangular FOP
     """
     matrix = cv.getPerspectiveTransform(original_coordinates, new_coordinates)
-    fop = cv.warpPerspective(frame, matrix, (int(new_coordinates[3][0]), int(new_coordinates[3][1])))
-    
+    fop = cv.warpPerspective(frame, matrix, (int(new_coordinates[3][0]), int(new_coordinates[3][1]))) 
+
     return fop
 
 
@@ -83,9 +88,10 @@ def get_robot_position(frame):
     copy = frame.copy()
 
     # threshold on the grayscale image and find the contour of the white shapes
-    gray_frame = cv.cvtColor(copy, cv.COLOR_BGR2GRAY)
-    _, thresholded = cv.threshold(gray_frame,200,255,cv.THRESH_BINARY)
-    contours, _ = cv.findContours(thresholded, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
+    #gray_frame = cv.cvtColor(copy, cv.COLOR_BGR2GRAY)
+    #_, thresholded = cv.threshold(gray_frame,150,255,cv.THRESH_BINARY)
+    _, thresholded_blue = cv.threshold(copy[:,:,0], 127,255,cv.THRESH_BINARY)
+    contours, _ = cv.findContours(thresholded_blue, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
 
     c = get_largest_contours(contours)
 
@@ -143,7 +149,7 @@ def get_obstacles(frame, robot_width):
     copy = frame.copy()
 
     # threshold on the background color and find the contour of the shapes set to 0
-    _, thresholded = cv.threshold(copy[:,:,0],70,255,cv.THRESH_BINARY)
+    _, thresholded = cv.threshold(copy[:,:,0],50,255,cv.THRESH_BINARY)
     contours, _ = cv.findContours(thresholded, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
 
     polygonal_obstacles = []
@@ -152,11 +158,11 @@ def get_obstacles(frame, robot_width):
     for c in contours:
 
         # remove too small or too large contours (TO OPTIMIZE)
-        if cv.contourArea(c) > 50000 or cv.contourArea(c) < 5000: 
+        if cv.contourArea(c) > 50000 or cv.contourArea(c) < 2000: 
             continue
 
         # approximate the contour
-        epsilon = 0.02 # precision of polygonal approximation, smaller is more precise (TO OPTIMIZE)
+        epsilon = 0.03 # precision of polygonal approximation, smaller is more precise (TO OPTIMIZE)
         perimeter = cv.arcLength(c, True)
         approximation = cv.approxPolyDP(c, epsilon * perimeter, True)
         
@@ -180,12 +186,12 @@ def get_objective(frame):
     copy = frame.copy()
 
     # threshold on the objective color
-    _, thresholded_red = cv.threshold(copy[:,:,2],150,255,cv.THRESH_BINARY)
+    _, thresholded_red = cv.threshold(copy[:,:,2],127,255,cv.THRESH_BINARY)
     
     # threshold on the grayscale image and remove Thymio from the possible zone of objective
     gray_frame = cv.cvtColor(copy, cv.COLOR_BGR2GRAY)
-    _, thresholded_white = cv.threshold(gray_frame,200,255,cv.THRESH_BINARY)
-    thresholded = thresholded_red ^ thresholded_white
+    _, thresholded_white = cv.threshold(gray_frame,127,255,cv.THRESH_BINARY)
+    thresholded = thresholded_red ^ thresholded_white & thresholded_red
 
     contours, _ = cv.findContours(thresholded, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
     
@@ -195,3 +201,31 @@ def get_objective(frame):
     objective_x, objective_y = get_contour_center(c)
 
     return objective_x, objective_y
+
+""" # Vision example on an image
+
+# load the image
+img = cv.imread("new_setup.png")
+img = cv.resize(img, (640,480), interpolation=cv.INTER_CUBIC) 
+
+# do the actual vision
+original_coordinates, new_coordinates = get_fop_coordinates(img)
+fop = get_fop(img, original_coordinates, new_coordinates)
+
+start_x, start_y, alpha, width = get_robot_position(fop)
+obstacles = get_obstacles(fop,width)
+objective_x, objective_y = get_objective(fop)
+
+# draws everything and displays it
+output = fop.copy()
+cv.circle(output, (objective_x, objective_y), radius=10, color=(255, 0, 0), thickness=-1)
+cv.circle(output, (start_x, start_y), radius=10, color=(0, 0, 255), thickness=-1)
+for obstacle in obstacles:
+    for vertice in obstacle:
+        cv.circle(output, (vertice[0],vertice[1]), radius=10, color=(0, 255, 0), thickness=-1)
+
+cv.imshow("image", output)
+
+# press any key to close all windows
+cv.waitKey(0) 
+cv.destroyAllWindows() """

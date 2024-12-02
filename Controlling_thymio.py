@@ -8,6 +8,13 @@ onevent speed
     motor.right.target = event.args[1]
 """
 
+# Function to set speed of motors
+def set_speed(left,right,aw,node):
+    v = {"motor.left.target": [left],
+        "motor.right.target": [right],
+    }
+    aw(node.set_variables(v))
+
 
 def controlling_wheels_speed(left_wheel,right_wheel,aw,node):
 
@@ -56,7 +63,7 @@ def pi_controller(error, integral, kp, ki, dt):
     output = kp * error + ki * integral
     return output, integral
 
-def compute_wheel_speeds(robot_pose, target_point, wheelbase, kp_angle, ki_angle, kp_distance, ki_distance):
+""" def compute_wheel_speeds(robot_pose, target_point, wheelbase, kp_angle, ki_angle, kp_distance, ki_distance):
     
     global angle_integral, distance_integral, last_time
 
@@ -88,7 +95,7 @@ def compute_wheel_speeds(robot_pose, target_point, wheelbase, kp_angle, ki_angle
     v_L = v - (omega * wheelbase / 2)
     v_R = v + (omega * wheelbase / 2)
 
-    return v_L, v_R
+    return v_L, v_R """
 
 
 def get_linear_error(start_point, end_point, robot_center):
@@ -126,7 +133,7 @@ def get_angular_error(start_point, end_point, robot_angle):
     if angular_error > math.pi:
         angular_error -= 2*math.pi
 
-    if angular_error < math.pi:
+    elif angular_error < -1 * math.pi:
         angular_error += 2*math.pi 
 
     return angular_error
