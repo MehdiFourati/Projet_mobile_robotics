@@ -27,21 +27,6 @@ def obstacle_dictionnary(obstacles):
             obstacle_dict[f'obstacle_{i+1}'] = points_list
     return obstacle_dict
 
-def get_robot_coordinates(frame, robot):                    # to be removed 
-
-    center_x, center_y, alpha, robot_width = vision.get_starting_position(frame)
-    
-    robot.update_coordinates(center_x, center_y, alpha, robot_width)
-
-    return center_x,center_y
-
-def get_goal_coordinates(frame, goal):                       # to be removed 
-
-    center_x, center_y = vision.get_objective(frame)
-    
-    goal.update_coordinates(center_x, center_y)
-
-    return goal
 
 def calculate_distance(point1, point2):
     """Compute the euclidean distance between two given points"""
@@ -206,20 +191,20 @@ def creating_adjacency_dictionnary(object_corners,robot,goal):
 
 def calculating_distances(adjacency_dict, points_named):
     """Returns a dictionnary with key: two connected points, value: distance between them"""
-    distances = {}  
+    distance_dict = {}  
 
     for point, connected_points in adjacency_dict.items():
         for i in connected_points:
         
             dist = calculate_distance(points_named[point], points_named[i])
     
-            distances[(point, i)] = dist
-            distances[(i, point)] = dist
+            distance_dict[(point, i)] = dist
+            distance_dict[(i, point)] = dist
     
-    return distances
+    return distance_dict
 
 def get_dist(distances, point1, point2):
-    """Finds the distance stored in the above dictionnary for two given points"""
+    """Fetches the distance contained in the distance dictionnary for two given points"""
     for node, dist in distances.items():
         if node[0] == point1 and node[1] == point2:
             return dist
@@ -229,7 +214,7 @@ def dijkstra_algo(adjacency_dict, points_named):
     shortest_dist = {} 
     previous_nodes = {} 
     unvisited = list(points_named.keys())
-    distances = calculating_distances(adjacency_dict, points_named)
+    distance_dict = calculating_distances(adjacency_dict, points_named)
 
     # We need to set every distance to infinity(~ unreachable at the start). We will simulate that using a very large value     
     for node in points_named.keys():
@@ -243,7 +228,7 @@ def dijkstra_algo(adjacency_dict, points_named):
                 current = node
         neighbors = adjacency_dict[current]
         for i in neighbors:
-            test = shortest_dist[current] + get_dist(distances,current, i)
+            test = shortest_dist[current] + get_dist(distance_dict,current, i)
             if test < shortest_dist[i]:
                 shortest_dist[i] = test
                 previous_nodes[i] = current
@@ -269,9 +254,8 @@ def global_plan(raw_obstacle_corners,robot,goal):
 
     obstacle_corners = [[tuple(arr) for arr in sublist] for sublist in raw_obstacle_corners]   # converting in the right format
     obstacle_corners = obstacle_dictionnary(obstacle_corners)
-    print(obstacle_corners)
     adj_list = creating_adjacency_dictionnary(obstacle_corners,robot,goal)
-    obstacle_corners = naming_points(obstacle_corners,robot,goal)
-    path = finding_path(adj_list,obstacle_corners)
+    points_named = naming_points(obstacle_corners,robot,goal)
+    path = finding_path(adj_list,points_named)
 
-    return path
+    return path, points_named       #we return points_named for plotting
