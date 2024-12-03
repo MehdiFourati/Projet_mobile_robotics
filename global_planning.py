@@ -211,7 +211,7 @@ def get_dist(distances, point1, point2):
         
 def dijkstra_algo(adjacency_dict, points_named):
 
-    shortest_dist = {} 
+    shortest_dist = {} # will 
     previous_nodes = {} 
     unvisited = list(points_named.keys())
     distance_dict = calculating_distances(adjacency_dict, points_named)
