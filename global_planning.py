@@ -263,6 +263,7 @@ def dijkstra_algo(adjacency_dict, points_named):
     distance_dict = calculating_distances(adjacency_dict, points_named)
 
     # We need to set every distance to infinity(~ unreachable at the start). We will simulate that using a very large value     
+    #test
     for node in points_named.keys():
         shortest_dist[node] = math.inf
     shortest_dist['R'] = 0                # setting the start to zero
@@ -274,11 +275,12 @@ def dijkstra_algo(adjacency_dict, points_named):
                 current = node
         neighbors = adjacency_dict[current]
         for i in neighbors:
-            test = shortest_dist[current] + get_dist(distance_dict,current, i)
-            if test < shortest_dist[i]:
-                shortest_dist[i] = test
+            try_value = shortest_dist[current] + get_dist(distance_dict,current, i)
+            if try_value < shortest_dist[i]:
+                shortest_dist[i] = try_value
                 previous_nodes[i] = current
         unvisited.remove(current)
+
 
     return previous_nodes
 
