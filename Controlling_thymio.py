@@ -20,12 +20,14 @@ class Robot:
     #Class containing informations about the robot's position
     
     # Initialize an instance of the class
-    def _init_(self):
-        self.center_x = None # x coordinates of the center of the robot
-        self.center_y = None # y coordinates of the center of the robot
-        self.alpha = None # angle of the robot relative to the x axis, counterclockwise, expressed in radian in range (-pi, pi]
-        self.robot_width = None # width of the robot
+    def __init__(self):
+        self.center_x = 0 # x coordinates of the center of the robot
+        self.center_y = 0 # y coordinates of the center of the robot
+        self.alpha = 0 # angle of the robot relative to the x axis, counterclockwise, expressed in radian in range (-pi, pi]
+        self.robot_width = 0 # width of the robot
         self.front_prox = [0,0,0,0,0,0,0]  # values of the frontal proximity sensors
+        self.lspeed = 0 # speed of the left wheel
+        self.rspeed = 0 # speed of the right wheel
 
     # Update the coordinates, orientation and width of the instance
     def update_coordinates(self, center_x, center_y, alpha, robot_width):
@@ -37,6 +39,10 @@ class Robot:
     # Update the values of the frontal proximity sensors
     def update_front_prox(self, prox_values):
         self.front_prox = prox_values
+
+    def update_speed(self, left, right):
+        self.lspeed = left
+        self.rspeed = right
 
 
 def set_speed(left, right, aw, node):
@@ -148,11 +154,11 @@ def reached_linear_target(end_point, robot_center, delta):
     return False    
 
 
-def compute_wheel_speed(initial_turn, start_point, end_point, next_point, robot, aw, node):
+def compute_wheel_speed(initial_turn, start_point, end_point, next_point, error_linear, error_angle, robot, path, aw, node):
     
     robot_center = np.array([robot.center_x, robot.center_y])
     robot_angle = robot.alpha
-    
+
     # do the initial orientation
     if initial_turn:
         
@@ -178,7 +184,7 @@ def compute_wheel_speed(initial_turn, start_point, end_point, next_point, robot,
             left_wheel_speed = 0
             right_wheel_speed = 0
             set_speed(int(left_wheel_speed),int(right_wheel_speed),aw,node)
-            time.sleep(10)
+            time.sleep(2)
         else:
             if get_angular_error(end_point, next_point, robot_angle) < ANGULAR_DELTA:
                 # finished turning, ready to go straight
@@ -212,57 +218,4 @@ def compute_wheel_speed(initial_turn, start_point, end_point, next_point, robot,
         else:
             # never reaches this, here to avoid error
             pass
-    return int(left_wheel_speed),int(right_wheel_speed)
-
-""" # do the initial orientation
-                if initial_turn:
-                    
-                    # turning
-                    error_angle = Controlling_thymio.get_angular_error(end_point, next_point, robot_angle)
-                    left_wheel_speed = -1 * np.sign(error_angle) * TURNING_SPEED
-                    right_wheel_speed = np.sign(error_angle) * TURNING_SPEED
-                    Controlling_thymio.set_speed(int(left_wheel_speed),int(right_wheel_speed),aw,node)
-                    
-                    # first turn is done
-                    if Controlling_thymio.get_angular_error(end_point, next_point, robot_angle) < ANGULAR_DELTA:
-                        initial_turn = False
-                        Controlling_thymio.set_speed(0,0,aw,node)
-
-                # check if the next point as been reached
-                if Controlling_thymio.reached_linear_target(end_point, robot_center, PATH_DELTA):
-                    
-                    # if the last point has been reached
-                    if next_point[0] == 0 and next_point[1] == 0:
-                        print("Target reached")
-                        Controlling_thymio.set_speed(0,0,aw,node)
-                        time.sleep(10)
-                    else:
-                        if Controlling_thymio.get_angular_error(end_point, next_point, robot_angle) < ANGULAR_DELTA:
-                            # finished turning, ready to go straight
-                            path = path[1:]
-
-                        else:
-                            # turning
-                            error_angle = Controlling_thymio.get_angular_error(end_point, next_point, robot_angle)
-                            left_wheel_speed = -1 * np.sign(error_angle) * TURNING_SPEED
-                            right_wheel_speed = np.sign(error_angle) * TURNING_SPEED
-                            Controlling_thymio.set_speed(int(left_wheel_speed),int(right_wheel_speed),aw,node)
-                else:
-                    # does not do the straight control if doing the initial turning
-                    if not initial_turn:
-                        # going straight
-                        error_linear = np.append(error_linear, Controlling_thymio.get_linear_error(start_point, end_point,robot_center))
-                        error_angle = np.append(error_angle, Controlling_thymio.get_angular_error(start_point, end_point, robot_angle))
-                        
-                        left_wheel_speed = STRAIGHT_SPEED - Controlling_thymio.PI_controller(error_angle, KP_ANGULAR, KI_ANGULAR) + Controlling_thymio.PI_controller(error_linear, KP_LINEAR, KI_LINEAR)
-                        right_wheel_speed = STRAIGHT_SPEED + Controlling_thymio.PI_controller(error_angle, KP_ANGULAR, KI_ANGULAR) - Controlling_thymio.PI_controller(error_linear, KP_LINEAR, KI_LINEAR)
-                        
-                        # limit the maximum speed of the wheels
-                        if left_wheel_speed > MAX_STRAIGHT_SPEED: left_wheel_speed = MAX_STRAIGHT_SPEED
-                        if right_wheel_speed > MAX_STRAIGHT_SPEED: right_wheel_speed = MAX_STRAIGHT_SPEED
-                        if left_wheel_speed < -MAX_STRAIGHT_SPEED: left_wheel_speed = -MAX_STRAIGHT_SPEED
-                        if right_wheel_speed < -MAX_STRAIGHT_SPEED: right_wheel_speed = -MAX_STRAIGHT_SPEED
-                        
-                        Controlling_thymio.set_speed(int(left_wheel_speed),int(right_wheel_speed),aw,node)
-                    else:
-                        pass """
+    return int(left_wheel_speed), int(right_wheel_speed), error_linear, error_angle, initial_turn, path

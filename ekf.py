@@ -16,7 +16,7 @@ POSY_VAR = 5.2
 class ExtendedKalmanFilter:
     
     #how to initialize the matrices ???
-    def __init__(self,x0=np.array([0,0,0,0,0])):
+    def __init__(self,x0=np.array([0,0,0,0,0],dtype=float)):
         #[position =(posx,posy),orientation,speed=(speed_left,spped_right)]
         self.x = x0
         
@@ -47,30 +47,33 @@ class ExtendedKalmanFilter:
         self.t = t
         
     def state_transition_f(self,dt):
-        angle = self.x[2]
-        wheel_l = self.x[3]
-        wheel_r = self.x[4]
+        angle = float(self.x[2])
+        wheel_l = float(self.x[3])
+        wheel_r = float(self.x[4])
+
+
         
         angular_velocity = (wheel_r - wheel_l)/wheel_base
         linear_velocity = (wheel_r + wheel_l)/2
         a_priori_estimate = np.array([
-        self.x[0] + np.cos(angle) * linear_velocity * dt,  #posx
-        self.x[1] + np.sin(angle) * linear_velocity * dt,  #posy
-        self.x[2] + angular_velocity * dt,                #angle
-        self.x[3],
-        self.x[4]
+        float(self.x[0]) + np.cos(angle) * linear_velocity * dt,  #posx
+        float(self.x[1]) + np.sin(angle) * linear_velocity * dt,  #posy
+        float(self.x[2]) + angular_velocity * dt,                #angle
+        float(self.x[3]),
+        float(self.x[4])
 
     ])
+
         return a_priori_estimate
     
     def jacobian_f(self,dt):
-        angle = self.x[2]
-        wheel_l = self.x[3]
-        wheel_r = self.x[4]
+        angle = float(self.x[2])
+        wheel_l = float(self.x[3])
+        wheel_r = float(self.x[4])
         
         #angular_velocity = (wheel_r - wheel_l)/wheel_base
         linear_velocity = (wheel_r + wheel_l)/2
-        
+
 
         
         jacobian = np.array([
@@ -79,7 +82,7 @@ class ExtendedKalmanFilter:
         [0, 0, 1, -dt / (wheel_base), dt / (wheel_base)],  #d(angle)/dtheta (maybe divide by 2)
         [0, 0, 0, 1, 0],  
         [0, 0, 0, 0, 1]   
-    ])
+    ],dtype=float)
 
         return jacobian
         
@@ -147,7 +150,8 @@ def apply_kalman(kalman: ExtendedKalmanFilter(np.array([0,0,0,0,0])),camera_on,p
     kalman.predict(dt)
     #update the state
     x,P = kalman.update(camera_on,z)
-    x = [int(attr) for attr in x if attr != x[2]]
+    x = [int(x[i]) for i in range(5) if i != 2]
+    print(x)
     return x,P
     
         
