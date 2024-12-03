@@ -1,26 +1,5 @@
 import math 
-
-class Robot:
-    #Class containing informations about the robot's position
-    
-    # Initialize an instance of the class
-    def _init_(self):
-        self.center_x = None # x coordinates of the center of the robot
-        self.center_y = None # y coordinates of the center of the robot
-        self.alpha = None # angle of the robot relative to the x axis, counterclockwise, expressed in radian in range (-pi, pi]
-        self.robot_width = None # width of the robot
-        self.front_prox = [0,0,0,0,0,0,0]  # values of the frontal proximity sensors
-
-    # Update the coordinates, orientation and width of the instance
-    def update_coordinates(self, center_x, center_y, alpha, robot_width):
-        self.center_x = center_x
-        self.center_y = center_y
-        self.alpha = alpha
-        self.robot_width = robot_width
-        
-    # Update the values of the frontal proximity sensors
-    def update_front_prox(self, prox_values):
-        self.front_prox = prox_values
+from Controlling_thymio import Robot
 
 def obstacle_dictionnary(obstacles):                                             
     """Create a dictionnary with key : obstacle and value : coordinates of all its vertices

@@ -1,5 +1,43 @@
 import math
 import numpy as np
+import time
+
+
+# Global constants here
+
+KP_LINEAR = 14 # linear proportional gain in PI controller
+KI_LINEAR = 0 # linear integral gain in PI controller
+KP_ANGULAR = 14 # angular proportional gain in PI controller
+KI_ANGULAR = 0 # angular integral gain in PI controller
+PATH_DELTA = 7 # acccepted difference in pixels between the actual robot's position and its goal
+ANGULAR_DELTA = 0.15 # accepted difference in radian between the actual robot's angle and its goal
+TURNING_SPEED = 100 # speed of the wheel when turning
+STRAIGHT_SPEED = 150 # speed of the wheel when going straight
+MAX_STRAIGHT_SPEED = 200 # maximum speed to be sent to the robot
+
+
+class Robot:
+    #Class containing informations about the robot's position
+    
+    # Initialize an instance of the class
+    def _init_(self):
+        self.center_x = None # x coordinates of the center of the robot
+        self.center_y = None # y coordinates of the center of the robot
+        self.alpha = None # angle of the robot relative to the x axis, counterclockwise, expressed in radian in range (-pi, pi]
+        self.robot_width = None # width of the robot
+        self.front_prox = [0,0,0,0,0,0,0]  # values of the frontal proximity sensors
+
+    # Update the coordinates, orientation and width of the instance
+    def update_coordinates(self, center_x, center_y, alpha, robot_width):
+        self.center_x = center_x
+        self.center_y = center_y
+        self.alpha = alpha
+        self.robot_width = robot_width
+        
+    # Update the values of the frontal proximity sensors
+    def update_front_prox(self, prox_values):
+        self.front_prox = prox_values
+
 
 def set_speed(left, right, aw, node):
     """
@@ -108,3 +146,123 @@ def reached_linear_target(end_point, robot_center, delta):
         return True
 
     return False    
+
+
+def compute_wheel_speed(initial_turn, start_point, end_point, next_point, robot, aw, node):
+    
+    robot_center = np.array([robot.center_x, robot.center_y])
+    robot_angle = robot.alpha
+    
+    # do the initial orientation
+    if initial_turn:
+        
+        # turning
+        error_angle = get_angular_error(end_point, next_point, robot_angle)
+        left_wheel_speed = -1 * np.sign(error_angle) * TURNING_SPEED
+        right_wheel_speed = np.sign(error_angle) * TURNING_SPEED
+        
+        # first turn is done
+        if get_angular_error(end_point, next_point, robot_angle) < ANGULAR_DELTA:
+            initial_turn = False
+            left_wheel_speed = 0
+            right_wheel_speed = 0
+
+        set_speed(int(left_wheel_speed),int(right_wheel_speed),aw,node) 
+
+    # check if the next point as been reached
+    if reached_linear_target(end_point, robot_center, PATH_DELTA):
+        
+        # if the last point has been reached
+        if next_point[0] == 0 and next_point[1] == 0:
+            print("Target reached")
+            left_wheel_speed = 0
+            right_wheel_speed = 0
+            set_speed(int(left_wheel_speed),int(right_wheel_speed),aw,node)
+            time.sleep(10)
+        else:
+            if get_angular_error(end_point, next_point, robot_angle) < ANGULAR_DELTA:
+                # finished turning, ready to go straight
+                path = path[1:]
+                left_wheel_speed = 0
+                right_wheel_speed = 0
+                set_speed(int(left_wheel_speed),int(right_wheel_speed),aw,node)
+            else:
+                # turning
+                error_angle = get_angular_error(end_point, next_point, robot_angle)
+                left_wheel_speed = -1 * np.sign(error_angle) * TURNING_SPEED
+                right_wheel_speed = np.sign(error_angle) * TURNING_SPEED
+                set_speed(int(left_wheel_speed),int(right_wheel_speed),aw,node)
+    else:
+        # does not do the straight control if doing the initial turning
+        if not initial_turn:
+            # going straight
+            error_linear = np.append(error_linear, get_linear_error(start_point, end_point,robot_center))
+            error_angle = np.append(error_angle, get_angular_error(start_point, end_point, robot_angle))
+            
+            left_wheel_speed = STRAIGHT_SPEED - PI_controller(error_angle, KP_ANGULAR, KI_ANGULAR) + PI_controller(error_linear, KP_LINEAR, KI_LINEAR)
+            right_wheel_speed = STRAIGHT_SPEED + PI_controller(error_angle, KP_ANGULAR, KI_ANGULAR) - PI_controller(error_linear, KP_LINEAR, KI_LINEAR)
+            
+            # limit the maximum speed of the wheels
+            if left_wheel_speed > MAX_STRAIGHT_SPEED: left_wheel_speed = MAX_STRAIGHT_SPEED
+            if right_wheel_speed > MAX_STRAIGHT_SPEED: right_wheel_speed = MAX_STRAIGHT_SPEED
+            if left_wheel_speed < -MAX_STRAIGHT_SPEED: left_wheel_speed = -MAX_STRAIGHT_SPEED
+            if right_wheel_speed < -MAX_STRAIGHT_SPEED: right_wheel_speed = -MAX_STRAIGHT_SPEED
+            
+            set_speed(int(left_wheel_speed),int(right_wheel_speed),aw,node)
+        else:
+            # never reaches this, here to avoid error
+            pass
+    return int(left_wheel_speed),int(right_wheel_speed)
+
+""" # do the initial orientation
+                if initial_turn:
+                    
+                    # turning
+                    error_angle = Controlling_thymio.get_angular_error(end_point, next_point, robot_angle)
+                    left_wheel_speed = -1 * np.sign(error_angle) * TURNING_SPEED
+                    right_wheel_speed = np.sign(error_angle) * TURNING_SPEED
+                    Controlling_thymio.set_speed(int(left_wheel_speed),int(right_wheel_speed),aw,node)
+                    
+                    # first turn is done
+                    if Controlling_thymio.get_angular_error(end_point, next_point, robot_angle) < ANGULAR_DELTA:
+                        initial_turn = False
+                        Controlling_thymio.set_speed(0,0,aw,node)
+
+                # check if the next point as been reached
+                if Controlling_thymio.reached_linear_target(end_point, robot_center, PATH_DELTA):
+                    
+                    # if the last point has been reached
+                    if next_point[0] == 0 and next_point[1] == 0:
+                        print("Target reached")
+                        Controlling_thymio.set_speed(0,0,aw,node)
+                        time.sleep(10)
+                    else:
+                        if Controlling_thymio.get_angular_error(end_point, next_point, robot_angle) < ANGULAR_DELTA:
+                            # finished turning, ready to go straight
+                            path = path[1:]
+
+                        else:
+                            # turning
+                            error_angle = Controlling_thymio.get_angular_error(end_point, next_point, robot_angle)
+                            left_wheel_speed = -1 * np.sign(error_angle) * TURNING_SPEED
+                            right_wheel_speed = np.sign(error_angle) * TURNING_SPEED
+                            Controlling_thymio.set_speed(int(left_wheel_speed),int(right_wheel_speed),aw,node)
+                else:
+                    # does not do the straight control if doing the initial turning
+                    if not initial_turn:
+                        # going straight
+                        error_linear = np.append(error_linear, Controlling_thymio.get_linear_error(start_point, end_point,robot_center))
+                        error_angle = np.append(error_angle, Controlling_thymio.get_angular_error(start_point, end_point, robot_angle))
+                        
+                        left_wheel_speed = STRAIGHT_SPEED - Controlling_thymio.PI_controller(error_angle, KP_ANGULAR, KI_ANGULAR) + Controlling_thymio.PI_controller(error_linear, KP_LINEAR, KI_LINEAR)
+                        right_wheel_speed = STRAIGHT_SPEED + Controlling_thymio.PI_controller(error_angle, KP_ANGULAR, KI_ANGULAR) - Controlling_thymio.PI_controller(error_linear, KP_LINEAR, KI_LINEAR)
+                        
+                        # limit the maximum speed of the wheels
+                        if left_wheel_speed > MAX_STRAIGHT_SPEED: left_wheel_speed = MAX_STRAIGHT_SPEED
+                        if right_wheel_speed > MAX_STRAIGHT_SPEED: right_wheel_speed = MAX_STRAIGHT_SPEED
+                        if left_wheel_speed < -MAX_STRAIGHT_SPEED: left_wheel_speed = -MAX_STRAIGHT_SPEED
+                        if right_wheel_speed < -MAX_STRAIGHT_SPEED: right_wheel_speed = -MAX_STRAIGHT_SPEED
+                        
+                        Controlling_thymio.set_speed(int(left_wheel_speed),int(right_wheel_speed),aw,node)
+                    else:
+                        pass """
