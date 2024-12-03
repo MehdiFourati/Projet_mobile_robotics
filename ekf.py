@@ -71,6 +71,8 @@ class ExtendedKalmanFilter:
         #angular_velocity = (wheel_r - wheel_l)/wheel_base
         linear_velocity = (wheel_r + wheel_l)/2
         
+
+        
         jacobian = np.array([
         [1, 0, np.sin(angle) * linear_velocity * dt, -0.5 * np.cos(angle) * dt, -0.5 * np.cos(angle) * dt],  #d(posx)/dx
         [0, 1,  np.cos(angle) * linear_velocity * dt, 0.5 * np.sin(angle) * dt, 0.5 * np.sin(angle) * dt],  #d(posy)/dy
@@ -78,6 +80,7 @@ class ExtendedKalmanFilter:
         [0, 0, 0, 1, 0],  
         [0, 0, 0, 0, 1]   
     ])
+
         return jacobian
         
         
@@ -135,16 +138,16 @@ def apply_kalman(kalman: ExtendedKalmanFilter(np.array([0,0,0,0,0])),camera_on,p
         kalman.set_time_t(time.time())
     if camera_on:
         z = np.array([position[0],position[1],position[2],speed[0],speed[1]])
-        z=z.reshape(5,1)
+       
     else:
         z= np.array([speed[0],speed[1]])
-        z=z.reshape(2,1)
+
         
     #predict the state
     kalman.predict(dt)
     #update the state
     x,P = kalman.update(camera_on,z)
-    
+    x = [int(attr) for attr in x if attr != x[2]]
     return x,P
     
         
