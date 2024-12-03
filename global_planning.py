@@ -257,13 +257,13 @@ def dijkstra_algo(adjacency_dict, points_named):
     Output:
         - previous_nodes: dictionnary with key : point name, value : distance of the path
     """
-    shortest_dist = {} # will 
-    previous_nodes = {} 
+    # Used the template from this website : https://www.udacity.com/blog/2021/10/implementing-dijkstras-algorithm-in-python.html
+    shortest_dist = {} # it will store the best known cost of visiting each city, key : point name, value : distance 
+    previous_nodes = {} # it will store the best know path for each node, key : point name, value : best previous point name in the paths
     unvisited = list(points_named.keys())
     distance_dict = calculating_distances(adjacency_dict, points_named)
 
     # We need to set every distance to infinity(~ unreachable at the start). We will simulate that using a very large value     
-    #test
     for node in points_named.keys():
         shortest_dist[node] = math.inf
     shortest_dist['R'] = 0                # setting the start to zero
