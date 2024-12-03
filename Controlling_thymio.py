@@ -1,102 +1,36 @@
 import math
-import time
 import numpy as np
 
-program = """
-onevent speed
-    motor.left.target = event.args[0]
-    motor.right.target = event.args[1]
-"""
-
-# Function to set speed of motors
-def set_speed(left,right,aw,node):
+def set_speed(left, right, aw, node):
+    """
+    Set the speed of the wheels of the robot
+    Input:
+        - left: speed of the left wheel
+        - right: speed of the right wheel
+        - aw: helper function to handle await (c.f. tdm-python git repository: https://github.com/epfl-mobots/tdm-python/blob/main/doc/lowlevel.md)
+        - node: node to which the robot is associated (c.f. tdm-python git repository: https://github.com/epfl-mobots/tdm-python/blob/main/doc/lowlevel.md)
+    """
     v = {"motor.left.target": [left],
         "motor.right.target": [right],
     }
     aw(node.set_variables(v))
 
 
-def controlling_wheels_speed(left_wheel,right_wheel,aw,node):
-
-    aw(node.register_events([("speed", 2)]))
-    aw(node.compile(program))
-    aw(node.send_events({"speed": [left_wheel,right_wheel]}))
-    aw(node.run())
-
-    return 
-
 def kidnapping(node):
-    
-    default_value = [0,0,20]
+    """
+    Detects if the robot is being kidnapped
+    Input:
+        - node: node to which the robot is associated (c.f. tdm-python git repository: https://github.com/epfl-mobots/tdm-python/blob/main/doc/lowlevel.md) 
+    Output:
+        - True is the robot is being kidnapped, else False
+    """
+    default_value = [0,0,20] # [x, y, z], g = 20
     combined_error = sum(abs(curr - default) for curr, default in zip(node.v.acc, default_value))
     if combined_error > 10:
         return True
     else:
         return False
     
-def normalize_angle(angle):
-    """Normalize an angle to the range [-pi, pi]."""
-    return (angle + math.pi) % (2 * math.pi) - math.pi
-
-def aligning_thymio(robot,path,node,aw):                    #to be removed ? 
-
-    x1, y1 = path[0]
-    x2, y2 = path[1]
-
-    seg_angle = math.atan2(y2 - y1, x2 - x1)
-    normalized_angle = normalize_angle(seg_angle)
-    rotation =  normalized_angle - robot.alpha 
-    return
-
-# PI controller state
-angle_integral = 0
-distance_integral = 0
-last_time = None
-
-
-
-def pi_controller(error, integral, kp, ki, dt):
-    """
-    Simple PI controller.
-    """
-    integral += error * dt
-    output = kp * error + ki * integral
-    return output, integral
-
-""" def compute_wheel_speeds(robot_pose, target_point, wheelbase, kp_angle, ki_angle, kp_distance, ki_distance):
-    
-    global angle_integral, distance_integral, last_time
-
-    x = robot_pose.center_x
-    y = robot_pose.center_y
-    alpha = robot_pose.alpha
-    x_target, y_target = target_point
-
-    current_time = time.time()
-
-    if last_time is None:
-        last_time = current_time
-    dt = current_time - last_time
-    last_time = current_time
-
-    desired_angle = math.atan2(y_target - y, x_target - x)
-    angle_error = normalize_angle(desired_angle - alpha)
-
-    # Compute angular velocity (omega) using the PI angle controller
-    omega, angle_integral = pi_controller(angle_error, angle_integral, kp_angle, ki_angle, dt)
-
-    # Calculate distance error
-    distance_error = math.sqrt((x_target - x)**2 + (y_target - y)**2)
-
-    # Compute linear velocity (v) using the PI distance controller
-    v, distance_integral = pi_controller(distance_error, distance_integral, kp_distance, ki_distance, dt)
-
-    # Convert linear and angular velocities to wheel speeds
-    v_L = v - (omega * wheelbase / 2)
-    v_R = v + (omega * wheelbase / 2)
-
-    return v_L, v_R """
-
 
 def get_linear_error(start_point, end_point, robot_center):
     """
@@ -108,9 +42,13 @@ def get_linear_error(start_point, end_point, robot_center):
     Output:
         - linear_error: euclidean distance between the robot and its optimal trajectory
     """
+    # compute the distance between the robot center and the optimal trajectory using the area of the parallelogram
+    # (Source: https://www.includehelp.com/python/distance-between-point-and-a-line-from-two-points-in-numpy.aspx, last accessed 30.11.2024)
     linear_error = np.linalg.norm(np.cross(end_point-start_point, start_point-robot_center))/np.linalg.norm(end_point-start_point)
 
+    # get the side of the line on which the point is using a dot product with the normal
     # if positive the point is on the left side, if negative the point is on the right side
+    # (Source: https://math.stackexchange.com/questions/274712/calculate-on-which-side-of-a-straight-line-is-a-given-point-located, last accessed 30.11.2024)
     side = (robot_center[0]-start_point[0])*(end_point[1]-start_point[1]) - (robot_center[1]-start_point[1])*(end_point[0]-start_point[0])
 
     return linear_error * np.sign(side)
@@ -163,6 +101,7 @@ def reached_linear_target(end_point, robot_center, delta):
     Output:
         - True if the robot reach end_point, else False
     """
+    # euclidean distance between robot center and next point in path
     remaining_path = np.sqrt((end_point[0]-robot_center[0])**2 + (end_point[1]-robot_center[1])**2)
 
     if remaining_path < delta:
