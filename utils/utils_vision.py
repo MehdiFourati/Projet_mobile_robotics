@@ -98,7 +98,7 @@ def get_further_vertices(frame, robot_width, polygonal_obstacles):
             black_frame_line = black_frame.copy()
             cv.line(black_frame_line,(center_x + 5*(center_x-origin_x),center_y + 5*(center_y-origin_y)),(opposite_x,opposite_y),(255,255,255),1) # 5* to make the line longer
             
-            # compute the intersections between the line and a circle of radius robot_width/1.8 and center at the point of interest
+            # compute the intersections between the line and a circle of radius robot_width and center at the point of interest
             outside_obstacle = black_frame_line ^ obstacle_mask
             outside_obstacle = outside_obstacle - obstacle_mask
             width_mask = black_frame.copy()

@@ -18,29 +18,16 @@ def get_fop_coordinates(frame):
     # to avoid overwriting the input
     copy = frame.copy()
 
-    # threshold on the background color and find the contour of the shape set to 0 (!TO OPTMIZE ON BACKGROUND!)
-    
-    #_, thresholded_blue = cv.threshold(copy[:,:,0],127,255,cv.THRESH_BINARY)
-    #thresholded = thresholded_blue ^ thresholded_green
-    #thresholded = thresholded ^ thresholded_red
+    # threshold on the background color and find the contour of the shape set to 0
 
     _, thresholded_blue = cv.threshold(copy[:,:,0], 127,255,cv.THRESH_BINARY_INV)
-    #_, thresholded_green = cv.threshold(copy[:,:,1],140,255,cv.THRESH_BINARY)
-    _, thresholded_red = cv.threshold(copy[:,:,2],127,255,cv.THRESH_BINARY)
-
-    thresholded = thresholded_blue ^ thresholded_red
-    thresholded = (255 - thresholded)
-    
-    #_, thresholded = cv.threshold(gray_frame,100,255,cv.THRESH_BINARY_INV)
-    #gray_frame = cv.cvtColor(copy, cv.COLOR_BGR2GRAY)
-    #thresholded = cv.adaptiveThreshold(gray_frame,255,cv.ADAPTIVE_THRESH_GAUSSIAN_C,cv.THRESH_BINARY_INV,43,3)
 
     contours, _ = cv.findContours(thresholded_blue, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
 
     c = get_largest_contours(contours)
     
     # approximate the field of play to a polygon with 4 vertices
-    epsilon = 0.05 # precision of polygonal approximation, smaller is more precise (TO OPTIMIZE)
+    epsilon = 0.05 # precision of polygonal approximation, smaller is more precise
     perimeter = cv.arcLength(c, True) # True means closed contour
     approximation = cv.approxPolyDP(c, epsilon * perimeter, True) # 2nd parameter: maximum distance from contour to approximation
     original_coordinates = [approximation[0][0], approximation[1][0], approximation[2][0], approximation[3][0]]
@@ -88,8 +75,6 @@ def get_robot_position(frame):
     copy = frame.copy()
 
     # threshold on the grayscale image and find the contour of the white shapes
-    #gray_frame = cv.cvtColor(copy, cv.COLOR_BGR2GRAY)
-    #_, thresholded = cv.threshold(gray_frame,150,255,cv.THRESH_BINARY)
     _, thresholded_blue = cv.threshold(copy[:,:,0], 127,255,cv.THRESH_BINARY)
     contours, _ = cv.findContours(thresholded_blue, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
 
@@ -100,7 +85,7 @@ def get_robot_position(frame):
     robot_width = int(max(tilted_rect[1]))
 
     # approximate the contour roughly and more precisely
-    epsilon = 0.01 # precision of polygonal approximation, smaller is more precise (TO OPTIMIZE)
+    epsilon = 0.01 # precision of polygonal approximation, smaller is more precise
     perimeter = cv.arcLength(c, True)
     curved_approximation = cv.approxPolyDP(c, epsilon * perimeter, True)
     epsilon = 0.02
@@ -157,12 +142,12 @@ def get_obstacles(frame, robot_width):
     # loop over all contour
     for c in contours:
 
-        # remove too small or too large contours (TO OPTIMIZE)
+        # remove too small or too large contours
         if cv.contourArea(c) > 50000 or cv.contourArea(c) < 2000: 
             continue
 
         # approximate the contour
-        epsilon = 0.03 # precision of polygonal approximation, smaller is more precise (TO OPTIMIZE)
+        epsilon = 0.03 # precision of polygonal approximation, smaller is more precise
         perimeter = cv.arcLength(c, True)
         approximation = cv.approxPolyDP(c, epsilon * perimeter, True)
         
@@ -201,31 +186,3 @@ def get_objective(frame):
     objective_x, objective_y = get_contour_center(c)
 
     return objective_x, objective_y
-
-""" # Vision example on an image
-
-# load the image
-img = cv.imread("new_setup.png")
-img = cv.resize(img, (640,480), interpolation=cv.INTER_CUBIC) 
-
-# do the actual vision
-original_coordinates, new_coordinates = get_fop_coordinates(img)
-fop = get_fop(img, original_coordinates, new_coordinates)
-
-start_x, start_y, alpha, width = get_robot_position(fop)
-obstacles = get_obstacles(fop,width)
-objective_x, objective_y = get_objective(fop)
-
-# draws everything and displays it
-output = fop.copy()
-cv.circle(output, (objective_x, objective_y), radius=10, color=(255, 0, 0), thickness=-1)
-cv.circle(output, (start_x, start_y), radius=10, color=(0, 0, 255), thickness=-1)
-for obstacle in obstacles:
-    for vertice in obstacle:
-        cv.circle(output, (vertice[0],vertice[1]), radius=10, color=(0, 255, 0), thickness=-1)
-
-cv.imshow("image", output)
-
-# press any key to close all windows
-cv.waitKey(0) 
-cv.destroyAllWindows() """
