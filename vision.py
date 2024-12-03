@@ -141,20 +141,20 @@ def get_obstacles(frame, robot_width):
 
     # loop over all contour
     for c in contours:
-
+        
         # remove too small or too large contours
         if cv.contourArea(c) > 50000 or cv.contourArea(c) < 2000: 
             continue
-
+        
         # approximate the contour
         epsilon = 0.03 # precision of polygonal approximation, smaller is more precise
         perimeter = cv.arcLength(c, True)
         approximation = cv.approxPolyDP(c, epsilon * perimeter, True)
-        
+
         polygonal_obstacles.append([approximation])
 
-        # compute the vertices further away to avoid crashing
-        further_vertices = get_further_vertices(copy, robot_width, polygonal_obstacles)
+    # compute the vertices further away to avoid crashing
+    further_vertices = get_further_vertices(copy, robot_width, polygonal_obstacles)
         
     return further_vertices
 
