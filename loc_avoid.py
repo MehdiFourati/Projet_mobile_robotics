@@ -78,19 +78,19 @@ def front_obst(node, robot_instance, aw):
             
     if local_state == FRONT_LEFT:
         if close_left > rotationThr:
-            set_speed(node, 2*speed, speed, aw)
-            robot_instance.update_speed(2*speed,speed)
+            set_speed(node, 3*speed, 0, aw)
+            robot_instance.update_speed(3*speed, 0)
             robot_instance.update_front_prox(update_prox_values(node, aw))
             close_left = (robot_instance.front_prox[0] + robot_instance.front_prox[1]) // 2
-            return 2*speed, speed
+            return 3*speed, 0
 
     elif local_state == FRONT_RIGHT:
         if close_right > rotationThr:
-            set_speed(node, speed, 2*speed, aw)
+            set_speed(node, 0, 3*speed, aw)
             robot_instance.update_front_prox(update_prox_values(node, aw))
-            robot_instance.update_speed(speed,2*speed)
+            robot_instance.update_speed(0,3*speed)
             close_right = (robot_instance.front_prox[3] + robot_instance.front_prox[4]) // 2
-            return speed, 2*speed
+            return 0, 3*speed
         
     local_state = DEFAULT
     return 0, 0
@@ -104,18 +104,18 @@ def side_obst(node, robot_instance, aw):
     
     if local_state == LEFT_OBST:
         if robot_instance.front_prox[0] > rotationThr:
-            set_speed(node, 2*speed, speed, aw)
-            robot_instance.update_speed(2*speed,speed)
+            set_speed(node, 3*speed, int(speed/2), aw)
+            robot_instance.update_speed(3*speed,int(speed/2))
             robot_instance.update_front_prox(update_prox_values(node,aw))
-            return 2*speed, speed
+            return 3*speed,int(speed/2)
         local_state = DEFAULT
 
     if local_state == RIGHT_OBST:
         if robot_instance.front_prox[4] > rotationThr:
-            set_speed(node, speed, 2*speed, aw)
-            robot_instance.update_speed(speed,2*speed)
+            set_speed(node, int(speed/2), 3*speed, aw)
+            robot_instance.update_speed(int(speed/2), 3*speed)
             robot_instance.update_front_prox(update_prox_values(node,aw))
-            return speed, 2*speed
+            return int(speed/2), 3*speed
         local_state = DEFAULT
 
     return 0, 0
