@@ -5,10 +5,10 @@ import time
 
 # Global constants here
 
-KP_LINEAR = 15 # linear proportional gain in PI controller
-KI_LINEAR = 0.2 # linear integral gain in PI controller
+KP_LINEAR = 10 # linear proportional gain in PI controller
+KI_LINEAR = 0.1 # linear integral gain in PI controller
 KP_ANGULAR = 15 # angular proportional gain in PI controller
-KI_ANGULAR = 0.2 # angular integral gain in PI controller
+KI_ANGULAR = 0.1 # angular integral gain in PI controller
 PATH_DELTA = 10 # acccepted difference in pixels between the actual robot's position and its goal
 ANGULAR_DELTA = 0.15 # accepted difference in radian between the actual robot's angle and its goal
 TURNING_SPEED = 100 # speed of the wheel when turning
@@ -215,8 +215,8 @@ def compute_wheel_speed(initial_turn, start_point, end_point, next_point, error_
             #else:
             angular_input = PI_controller(error_angle, KP_ANGULAR, KI_ANGULAR)
 
-            left_wheel_speed = STRAIGHT_SPEED + angular_input + linear_input
-            right_wheel_speed = STRAIGHT_SPEED - angular_input - linear_input
+            left_wheel_speed = STRAIGHT_SPEED - angular_input + linear_input
+            right_wheel_speed = STRAIGHT_SPEED + angular_input - linear_input
             
             # limit the maximum speed of the wheels
             if left_wheel_speed > MAX_STRAIGHT_SPEED: left_wheel_speed = MAX_STRAIGHT_SPEED

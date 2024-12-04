@@ -80,15 +80,19 @@ def get_robot_position(frame):
 
     c = get_largest_contours(contours)
 
+    if cv.contourArea(c) < 200:
+        raise ValueError("Robot not found")
+
+
     # get the largest side of the tilted rectangle to get the robot width
     tilted_rect = cv.minAreaRect(c)
     robot_width = int(max(tilted_rect[1]))
 
     # approximate the contour roughly and more precisely
-    epsilon = 0.01 # precision of polygonal approximation, smaller is more precise
+    epsilon = 0.03 # precision of polygonal approximation, smaller is more precise
     perimeter = cv.arcLength(c, True)
     curved_approximation = cv.approxPolyDP(c, epsilon * perimeter, True)
-    epsilon = 0.02
+    epsilon = 0.05
     straight_approximation = cv.approxPolyDP(c, epsilon * perimeter, True)
 
     # get the curved part of Thymio by checking the difference between the two contours
@@ -186,3 +190,31 @@ def get_objective(frame):
     objective_x, objective_y = get_contour_center(c)
 
     return objective_x, objective_y
+
+""" # Vision example on an image
+
+# load the image
+img = cv.imread("new_setup.png")
+img = cv.resize(img, (640,480), interpolation=cv.INTER_CUBIC) 
+
+# do the actual vision
+original_coordinates, new_coordinates = get_fop_coordinates(img)
+fop = get_fop(img, original_coordinates, new_coordinates)
+
+start_x, start_y, alpha, width = get_robot_position(fop)
+obstacles = get_obstacles(fop,width)
+objective_x, objective_y = get_objective(fop)
+
+# draws everything and displays it
+output = fop.copy()
+cv.circle(output, (objective_x, objective_y), radius=10, color=(255, 0, 0), thickness=-1)
+cv.circle(output, (start_x, start_y), radius=10, color=(0, 0, 255), thickness=-1)
+for obstacle in obstacles:
+    for vertice in obstacle:
+        cv.circle(output, (vertice[0],vertice[1]), radius=10, color=(0, 255, 0), thickness=-1)
+
+cv.imshow("image", output)
+
+# press any key to close all windows
+cv.waitKey(0) 
+cv.destroyAllWindows() """
