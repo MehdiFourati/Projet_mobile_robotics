@@ -80,10 +80,6 @@ def get_robot_position(frame):
 
     c = get_largest_contours(contours)
 
-    if cv.contourArea(c) < 200:
-        raise ValueError("Robot not found")
-
-
     # get the largest side of the tilted rectangle to get the robot width
     tilted_rect = cv.minAreaRect(c)
     robot_width = int(max(tilted_rect[1]))
