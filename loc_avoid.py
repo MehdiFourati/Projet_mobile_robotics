@@ -121,7 +121,7 @@ def local_avoidance(node, robot_instance, aw):
  
     set_speed(node, robot_instance.lspeed, robot_instance.rspeed, aw) # Setting speed
 
-    update_local_state(robot_instance)                              # Updating local state to do the corresponding avoidance
+    update_local_state(robot_instance)                              # REMOVE Updating local state to do the corresponding avoidance
 
     if local_state in(RIGHT_OBST, LEFT_OBST):                       # Local avoidance functions for front and side obstacle called 
         return side_obst(node, robot_instance, aw)
