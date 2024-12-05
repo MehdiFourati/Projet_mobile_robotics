@@ -1,22 +1,24 @@
 import numpy as np
 from Controlling_thymio import Robot
+import math
 
 DISTANCE_WHEEL = 90 # distance between the wheels in mm
 CAMERA_FPS = 30 # fps of the video feed
-DISTANCE_MM_S = 0.43
+DISTANCE_MM_S = 1
 
 def convert_input(robot):
 
     linear_velocity = (robot.lspeed + robot.rspeed)/2 * DISTANCE_MM_S / CAMERA_FPS * robot.robot_width / DISTANCE_WHEEL
-    angular_velocity = np.arcsin(float((robot.lspeed - robot.rspeed) * DISTANCE_MM_S / CAMERA_FPS * 2 / DISTANCE_WHEEL))
-
     angle = float(robot.alpha)
 
-    speed_x = np.cos(angle) * linear_velocity
-    speed_y = np.sin(angle) * linear_velocity
-    speed_angular = angular_velocity
+    delta_x = np.cos(angle) * linear_velocity
+    delta_y = np.sin(angle) * linear_velocity
 
-    return [speed_x, speed_y, speed_angular]
+    delta_angle = np.arcsin(float((robot.lspeed - robot.rspeed) * DISTANCE_MM_S / CAMERA_FPS / DISTANCE_WHEEL))
+
+    print("delta angle: ", delta_angle)
+
+    return [delta_x, delta_y, delta_angle]
 
 
 class KalmanFilter:

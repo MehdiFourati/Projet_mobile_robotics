@@ -171,7 +171,7 @@ def get_objective(frame):
     copy = frame.copy()
 
     # threshold on the objective color
-    _, thresholded_red = cv.threshold(copy[:,:,2],127,255,cv.THRESH_BINARY)
+    _, thresholded_red = cv.threshold(copy[:,:,2],150,255,cv.THRESH_BINARY)
     
     # threshold on the grayscale image and remove Thymio from the possible zone of objective
     gray_frame = cv.cvtColor(copy, cv.COLOR_BGR2GRAY)
@@ -214,4 +214,4 @@ cv.imshow("image", output)
 
 # press any key to close all windows
 cv.waitKey(0) 
-cv.destroyAllWindows() """
+cv.destroyAllWindows()"""
