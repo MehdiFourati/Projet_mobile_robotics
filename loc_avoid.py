@@ -1,8 +1,4 @@
-import global_planning
-from Controlling_thymio import Robot
 from Controlling_thymio import set_speed
-
-
 
 # local_state with the differents states for local avoidance 
 local_state = 1
@@ -26,13 +22,6 @@ def update_prox_values(node, aw):
     aw(node.wait_for_variables({"prox.horizontal"}))
     prox = list(node.v.prox.horizontal).copy()
     return prox
-
-""" # Function to set speed of motors
-def set_speed(node, left,right,aw):
-    v = {"motor.left.target": [left],
-        "motor.right.target": [right],
-    }
-    aw(node.set_variables(v)) """
 
 # Function to update current local state
 def update_local_state(robot_instance):
@@ -120,8 +109,6 @@ def local_avoidance(node, robot_instance, aw):
     robot_instance.update_front_prox(update_prox_values(node,aw))   # Updating new values for proximity sensors 
  
     set_speed(robot_instance.lspeed, robot_instance.rspeed, aw, node) # Setting speed
-
-    update_local_state(robot_instance)                              # REMOVE Updating local state to do the corresponding avoidance
 
     if local_state in(RIGHT_OBST, LEFT_OBST):                       # Local avoidance functions for front and side obstacle called 
         return side_obst(node, robot_instance, aw)

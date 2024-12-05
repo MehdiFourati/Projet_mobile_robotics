@@ -6,20 +6,20 @@ import time
 # Global constants here
 
 KP_LINEAR = 10 # linear proportional gain in PI controller
-KI_LINEAR = 0 # linear integral gain in PI controller
+KI_LINEAR = 0.01 # linear integral gain in PI controller
 KP_ANGULAR = 14 # angular proportional gain in PI controller
 KI_ANGULAR = 0.5 # angular integral gain in PI controller
 PATH_DELTA = 7 # acccepted difference in pixels between the actual robot's position and its goal
-ANGULAR_DELTA = 0.15 # accepted difference in radian between the actual robot's angle and its goal
+ANGULAR_DELTA = 0.05 # accepted difference in radian between the actual robot's angle and its goal
 TURNING_SPEED = 100 # speed of the wheel when turning
 STRAIGHT_SPEED = 150 # speed of the wheel when going straight
 MAX_STRAIGHT_SPEED = 200 # maximum speed to be sent to the robot
 
 
 class Robot:
-    #Class containing informations about the robot's position
+    # class containing informations about the robot's position
     
-    # Initialize an instance of the class
+    # initialize an instance of the class
     def __init__(self):
         self.center_x = 0 # x coordinates of the center of the robot
         self.center_y = 0 # y coordinates of the center of the robot
@@ -29,17 +29,18 @@ class Robot:
         self.lspeed = 0 # speed of the left wheel
         self.rspeed = 0 # speed of the right wheel
 
-    # Update the coordinates, orientation and width of the instance
+    # update the coordinates, orientation and width of the instance
     def update_coordinates(self, center_x, center_y, alpha, robot_width):
         self.center_x = center_x
         self.center_y = center_y
         self.alpha = alpha
         self.robot_width = robot_width
         
-    # Update the values of the frontal proximity sensors
+    # update the values of the frontal proximity sensors
     def update_front_prox(self, prox_values):
         self.front_prox = prox_values
 
+    # update the values of the wheel speed
     def update_speed(self, left, right):
         self.lspeed = left
         self.rspeed = right
@@ -161,7 +162,6 @@ def compute_wheel_speed(initial_turn, start_point, end_point, next_point, error_
 
     # do the initial orientation
     if initial_turn:
-        print('init turn')
         # turning
         error_angle = get_angular_error(start_point, end_point, robot_angle)
         left_wheel_speed = -1 * np.sign(error_angle) * TURNING_SPEED
@@ -211,8 +211,8 @@ def compute_wheel_speed(initial_turn, start_point, end_point, next_point, error_
             # limit the maximum speed of the wheels
             if left_wheel_speed > MAX_STRAIGHT_SPEED: left_wheel_speed = MAX_STRAIGHT_SPEED
             if right_wheel_speed > MAX_STRAIGHT_SPEED: right_wheel_speed = MAX_STRAIGHT_SPEED
-            if left_wheel_speed < 50: left_wheel_speed = 50
-            if right_wheel_speed < 50: right_wheel_speed = 50
+            if left_wheel_speed < 125: left_wheel_speed = 125
+            if right_wheel_speed < 125: right_wheel_speed = 125
             
             set_speed(int(left_wheel_speed),int(right_wheel_speed),aw,node)
         else:

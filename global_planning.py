@@ -1,5 +1,4 @@
 import math 
-from Controlling_thymio import Robot
 
 def obstacle_dictionnary(obstacles):                                             
     """Create a dictionnary with key : obstacle and value : coordinates of all its vertices

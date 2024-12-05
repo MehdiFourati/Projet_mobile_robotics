@@ -12,11 +12,13 @@ def convert_input(robot):
     """
     # convert the speed values of the wheel to pixel
     linear_velocity = (robot.lspeed + robot.rspeed)/2 * DISTANCE_MM_S / CAMERA_FPS * robot.robot_width / DISTANCE_WHEEL
-    delta_angle = np.arcsin(float((robot.lspeed - robot.rspeed) * DISTANCE_MM_S / CAMERA_FPS / DISTANCE_WHEEL))
-    
+   
+    # linear approximation of the angle based on experimentation 
+    delta_angle = (0.1667 * (robot.rspeed - robot.lspeed) + 8.33) * np.pi / 180
+
     angle = float(robot.alpha)
-    delta_x = np.cos(angle) * linear_velocity
-    delta_y = np.sin(angle) * linear_velocity
+    delta_x = np.sin(angle) * linear_velocity
+    delta_y = np.cos(angle) * linear_velocity
     
     return [delta_x, delta_y, delta_angle]
 
@@ -37,8 +39,8 @@ class KalmanFilter:
     def __init__(self, x0):
         self.F = np.array([[1.0, 0, 0], [0, 1.0, 0], [0, 0, 1.0]]) # state transition model
         self.H = np.array([[1.0, 0, 0], [0, 1.0, 0], [0, 0, 1.0]]) # observation model
-        self.Q = np.array([[1.0, 0, 0], [0, 1.0, 0], [0, 0, 1.0]]) # process noise covariance
-        self.R = np.array([[5.0, 0, 0], [0, 5.0, 0], [0, 0, 1.0]]) # measurement noise covariance
+        self.Q = np.array([[2.0, 0, 0], [0, 2.0, 0], [0, 0, 0.017]]) # process noise covariance
+        self.R = np.array([[5.0, 0, 0], [0, 5.0, 0], [0, 0, 0.15]]) # measurement noise covariance
         self.P = np.array([[1.0, 0, 0], [0, 1.0, 0], [0, 0, 1.0]]) # initial error covariance  
         self.x = x0 # initial state, shape [x,y,alpha]
 
