@@ -81,10 +81,10 @@ def get_robot_position(frame):
     robot_width = int(max(tilted_rect[1]))
 
     # approximate the contour roughly and more precisely
-    epsilon = 0.02 # precision of polygonal approximation, smaller is more precise
+    epsilon = 0.03 # precision of polygonal approximation, smaller is more precise
     perimeter = cv.arcLength(c, True)
     curved_approximation = cv.approxPolyDP(c, epsilon * perimeter, True)
-    epsilon = 0.03
+    epsilon = 0.04
     straight_approximation = cv.approxPolyDP(c, epsilon * perimeter, True)
 
     # get the curved part of Thymio by checking the difference between the two contours
