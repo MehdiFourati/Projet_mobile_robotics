@@ -1,10 +1,14 @@
 import numpy as np
 from Controlling_thymio import Robot
 
+DISTANCE_WHEEL = 90 # distance between the wheels in mm
+CAMERA_FPS = 30 # fps of the video feed
+DISTANCE_MM_S = 0.43
+
 def convert_input(robot):
 
-    linear_velocity = (robot.lspeed + robot.rspeed)/2 * 0.43 / 30 * robot.robot_width / 90
-    angular_velocity = (robot.lspeed - robot.rspeed)/robot.robot_width
+    linear_velocity = (robot.lspeed + robot.rspeed)/2 * DISTANCE_MM_S / CAMERA_FPS * robot.robot_width / DISTANCE_WHEEL
+    angular_velocity = np.arcsin(float((robot.lspeed - robot.rspeed) * DISTANCE_MM_S / CAMERA_FPS * 2 / DISTANCE_WHEEL))
 
     angle = float(robot.alpha)
 
