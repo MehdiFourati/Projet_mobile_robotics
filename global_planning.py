@@ -114,36 +114,17 @@ def is_intersection(point1,point2,point3,point4):
     
     return False 
 
-def obstacle_points_named(object_corners):
-    """Create a dictionnary with key : ostacle' name, value : all its vertices' name
-    Input:
-        - object_corners: dictionnary with key : obstacle, value : coordinates
-    Output:
-        - obstacle_name: dictionnary with key : ostacle' name, value : all its vertices' name
-    """
-    obstacle_names = {}  
-    i = 0 
-    for obstacle_id, points in object_corners.items():
-        obstacle_names[obstacle_id] = []
-        for _ in points:
-            obstacle_names[obstacle_id].append(f'P{i}')
-            i += 1
 
-    return obstacle_names
-
-def point_connection(point1, point2,obstacle_corners,Robot,goal):
+def point_connection(point1, point2,obstacle_corners,points_named):
     """Check if two points can be linked without crossing an obstacle
     Input: 
         - point1, point2: list of one 2D point (x,y)
         - object_corners: dictionnary with key : obstacle, value : coordinates
-        - robot: instance of the class robot
-        - goal: coordinates of the goal
+        - points_named: dictionnary with key : name of the point, value : coordinates (x,y)
     Output:
         - True if two points can be connected by a straight line without crossing an obstacle, else False"""
 
-    points_named = naming_points(obstacle_corners, Robot, goal)
-    #obstacle_points = obstacle_points_named(obstacle_corners)
-    coordinates = {i: j for j, i in points_named.items()}  # 
+    coordinates = {i: j for j, i in points_named.items()}   #New dictionary inverting the keys and values of points_names in order to get the names of the given points 
 
     p1 = coordinates[point1] 
     p2 = coordinates[point2] 
@@ -164,29 +145,27 @@ def point_connection(point1, point2,obstacle_corners,Robot,goal):
                     if point_list[i] == point1 or point_list[i + 1] == point2:
                         continue  # Skip if it's the same as the input points
                     if is_intersection(point1, point2, point_list[i], point_list[i + 1]):
-                        return False  # Intersection detected
+                        return False  
 
-    return True  # No intersection found, the points can be connected
+    return True  # connected
 
 
 
-def creating_adjacency_dictionnary(object_corners,robot,goal):
+def creating_adjacency_dictionnary(object_corners,points_named):
     """Create a dictionnary with key: point name, values: names of all points that are connected to it
     Input: 
         - object_corners: dictionnary with key : obstacle, value : coordinates
-        - robot: instance of the class robot
-        - goal: coordinates of the goal
+        - points_named: dictionnary with key : name of the point, value : coordinates (x,y)
     Output:
         - adjacency_dict: dictionnary with key: point name, values: names of all points that are connected to it
     """
-    points_named = naming_points(object_corners,robot,goal)
     adjacency_dict = {}
 
     for p1, point1 in points_named.items():
         adjacency_dict[p1] = []
         for p2, point2 in points_named.items():
             if p1 != p2:
-                if point_connection(point1, point2, object_corners,robot,goal):
+                if point_connection(point1, point2, object_corners,points_named):
                     adjacency_dict[p1].append(p2)
 
     return adjacency_dict
@@ -213,16 +192,16 @@ def calculating_distances(adjacency_dict, points_named):
     return distance_dict
 
 
-def get_dist(distances, point1, point2):
+def get_dist(distance_dict, point1, point2):
     """Fetch the distance contained in the euclidean distance dictionnary for two given points
     Input: 
-        - distances: dictionnary with key: two connected points, value: distance between them
+        - distance_dict: dictionnary with key: two connected points, value: distance between them
         - point1, point2: list of one 2D point (x,y)
     Output:
         - dist: euclidean distance between the two points
     """
-    for node, dist in distances.items():
-        if node[0] == point1 and node[1] == point2:
+    for point, dist in distance_dict.items():
+        if point[0] == point1 and point[1] == point2:
             return dist
         
 def dijkstra_algo(adjacency_dict, points_named):
@@ -231,7 +210,7 @@ def dijkstra_algo(adjacency_dict, points_named):
         - adjacency_dict: dictionnary with key: point name, values: names of all points that are connected to it
         - points_named: dictionnary with key : name of the point, value : coordinates (x,y)
     Output:
-        - previous_nodes: dictionnary with key : point name, value : distance of the path
+        - previous_nodes: dictionnary with key : point name, value : point name right before the key in the path
     """
     # Used the template from this website : https://www.udacity.com/blog/2021/10/implementing-dijkstras-algorithm-in-python.html
     shortest_dist = {} # it will store the best known cost of getting to each node, key : point name, value : distance 
@@ -291,8 +270,8 @@ def global_plan(raw_obstacle_corners,robot,goal):
     """
     obstacle_corners = [[tuple(arr) for arr in sublist] for sublist in raw_obstacle_corners] # converting in the right format
     obstacle_corners = obstacle_dictionnary(obstacle_corners)
-    adj_list = creating_adjacency_dictionnary(obstacle_corners,robot,goal)
     points_named = naming_points(obstacle_corners,robot,goal)
+    adj_list = creating_adjacency_dictionnary(obstacle_corners,points_named)
     path = finding_path(adj_list,points_named)
 
     return path, points_named # we return points_named for plotting
