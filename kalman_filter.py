@@ -1,15 +1,22 @@
 import numpy as np
 from Controlling_thymio import Robot
 
+DISTANCE_WHEEL = 90 # distance between the wheels in mm
+CAMERA_FPS = 30 # fps of the video feed
+DISTANCE_MM_S = 0.43
+
 def convert_input(robot):
 
-    linear_velocity = (robot.lspeed + robot.rspeed)/2
-    angular_velocity = (robot.lspeed - robot.rspeed)/robot.robot_width
+    linear_velocity = (robot.lspeed + robot.rspeed)/2 * DISTANCE_MM_S / CAMERA_FPS * robot.robot_width / DISTANCE_WHEEL
+    angular_velocity = np.arcsin(float((robot.lspeed - robot.rspeed) * DISTANCE_MM_S / CAMERA_FPS * 2 / DISTANCE_WHEEL))
 
-    speed_x = np.cos(robot.alpha) * linear_velocity
-    speed_y = np.sin(robot.alpha) * linear_velocity
+    angle = float(robot.alpha)
 
-    return [speed_x[0], speed_y[0], angular_velocity]
+    speed_x = np.cos(angle) * linear_velocity
+    speed_y = np.sin(angle) * linear_velocity
+    speed_angular = angular_velocity
+
+    return [speed_x, speed_y, speed_angular]
 
 
 class KalmanFilter:
@@ -27,6 +34,11 @@ class KalmanFilter:
         self.x = self.F @ self.x + converted_input
         self.P = self.F @ self.P @ self.F.transpose() + self.Q
 
+        if self.x[2][0] > np.pi:
+             self.x[2][0] -= 2*np.pi
+        elif self.x[2][0] < -np.pi:
+            self.x[2][0] += 2*np.pi
+
     # z shape [x,y,alpha]
     def update(self, z):
         y = z - self.H @ self.x
@@ -35,3 +47,8 @@ class KalmanFilter:
         self.x = self.x + K @ y
         I = np.eye(self.P.shape[0])
         self.P = (I - K @ self.H) @ self.P
+
+        if self.x[2][0] > np.pi:
+             self.x[2][0] -= 2*np.pi
+        elif self.x[2][0] < -np.pi:
+            self.x[2][0] += 2*np.pi

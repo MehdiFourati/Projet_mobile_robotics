@@ -211,8 +211,8 @@ def compute_wheel_speed(initial_turn, start_point, end_point, next_point, error_
             # limit the maximum speed of the wheels
             if left_wheel_speed > MAX_STRAIGHT_SPEED: left_wheel_speed = MAX_STRAIGHT_SPEED
             if right_wheel_speed > MAX_STRAIGHT_SPEED: right_wheel_speed = MAX_STRAIGHT_SPEED
-            if left_wheel_speed < -MAX_STRAIGHT_SPEED: left_wheel_speed = -MAX_STRAIGHT_SPEED
-            if right_wheel_speed < -MAX_STRAIGHT_SPEED: right_wheel_speed = -MAX_STRAIGHT_SPEED
+            if left_wheel_speed < 50: left_wheel_speed = 50
+            if right_wheel_speed < 50: right_wheel_speed = 50
             
             set_speed(int(left_wheel_speed),int(right_wheel_speed),aw,node)
         else:
