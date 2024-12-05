@@ -5,10 +5,10 @@ import time
 
 # Global constants here
 
-KP_LINEAR = 14 # linear proportional gain in PI controller
+KP_LINEAR = 10 # linear proportional gain in PI controller
 KI_LINEAR = 0 # linear integral gain in PI controller
 KP_ANGULAR = 14 # angular proportional gain in PI controller
-KI_ANGULAR = 0 # angular integral gain in PI controller
+KI_ANGULAR = 0.5 # angular integral gain in PI controller
 PATH_DELTA = 7 # acccepted difference in pixels between the actual robot's position and its goal
 ANGULAR_DELTA = 0.15 # accepted difference in radian between the actual robot's angle and its goal
 TURNING_SPEED = 100 # speed of the wheel when turning

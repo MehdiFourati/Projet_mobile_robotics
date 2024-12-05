@@ -79,13 +79,13 @@ def front_obst(node, robot_instance, aw):
             
     if local_state == FRONT_LEFT:
         if close_left > OBST_THR:
-            set_speed(node, SPEEDROT1, SPEED_ZERO, aw)
+            set_speed(SPEEDROT1, SPEED_ZERO, aw, node)
             robot_instance.update_speed(SPEEDROT1, SPEED_ZERO)
             return SPEEDROT1, SPEED_ZERO
 
     elif local_state == FRONT_RIGHT:
         if close_right > OBST_THR:
-            set_speed(node, SPEED_ZERO, SPEEDROT1, aw)
+            set_speed(SPEED_ZERO, SPEEDROT1, aw, node)
             robot_instance.update_speed(SPEED_ZERO, SPEEDROT1)
             return SPEED_ZERO, SPEEDROT1
         
@@ -101,14 +101,14 @@ def side_obst(node, robot_instance, aw):
     
     if local_state == LEFT_OBST:
         if robot_instance.front_prox[0] > OBST_THR:
-            set_speed(node, SPEEDROT1, SPEEDROT2, aw)
+            set_speed(SPEEDROT1, SPEEDROT2, aw, node)
             robot_instance.update_speed(SPEEDROT1, SPEEDROT2)
             return SPEEDROT1, SPEEDROT2
         local_state = DEFAULT
 
     if local_state == RIGHT_OBST:
         if robot_instance.front_prox[4] > OBST_THR:
-            set_speed(node, SPEEDROT2, SPEEDROT1, aw)
+            set_speed(SPEEDROT2, SPEEDROT1, aw, node)
             robot_instance.update_speed(SPEEDROT2, SPEEDROT1)
             return SPEEDROT2, SPEEDROT1
         local_state = DEFAULT
@@ -119,7 +119,7 @@ def local_avoidance(node, robot_instance, aw):
 
     robot_instance.update_front_prox(update_prox_values(node,aw))   # Updating new values for proximity sensors 
  
-    set_speed(node, robot_instance.lspeed, robot_instance.rspeed, aw) # Setting speed
+    set_speed(robot_instance.lspeed, robot_instance.rspeed, aw, node) # Setting speed
 
     update_local_state(robot_instance)                              # REMOVE Updating local state to do the corresponding avoidance
 
