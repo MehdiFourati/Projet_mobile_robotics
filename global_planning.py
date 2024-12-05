@@ -100,7 +100,7 @@ def is_intersection(point1,point2,point3,point4):
     
     # If o1 and o2 are different and o3 and o4 are different, then the points intersect
     if ori1 != ori2 and ori3 != ori4:
-        return True
+        return True #they intersect
     
     # Checking colinearity in every case + if the third point is inside the segment
     if ((ori1 == 0) and inside_line(point1, point2, point3)): 
