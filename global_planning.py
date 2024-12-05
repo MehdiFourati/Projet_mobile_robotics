@@ -137,15 +137,15 @@ def point_connection(point1, point2,obstacle_corners,points_named):
                 return True  
 
             # Now check if the line between point1 and point2 intersects any obstacle edges
-            for i in range(len(point_list)):
-                if i == len(point_list) - 1:  # Last point connects to the first
-                    if is_intersection(point1, point2, point_list[i], point_list[0]):
-                        return False
-                else:
-                    if point_list[i] == point1 or point_list[i + 1] == point2:
-                        continue  # Skip if it's the same as the input points
-                    if is_intersection(point1, point2, point_list[i], point_list[i + 1]):
-                        return False  
+        for i in range(len(point_list)):
+            if i == len(point_list) - 1:  # Last point connects to the first
+                if is_intersection(point1, point2, point_list[i], point_list[0]):
+                    return False
+            else:
+                if point_list[i] == point1 or point_list[i + 1] == point2:
+                    continue  # Skip if it's the same as the input points
+                if is_intersection(point1, point2, point_list[i], point_list[i + 1]):
+                    return False  
 
     return True  # connected
 
