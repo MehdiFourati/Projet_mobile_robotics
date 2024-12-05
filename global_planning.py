@@ -47,7 +47,7 @@ def naming_points(object_corners, robot, goal):
     return point_list_named
 
 def inside_line(point1, point2, point3): 
-    """Check a point if between two others
+    """Check a point if between two others while the 3 points are colinear to each others
     Input:
         - point1, point2, point3: list of one 2D point (x,y)
     Output:
@@ -56,7 +56,7 @@ def inside_line(point1, point2, point3):
     x1, y1 = point1
     x2, y2 = point2
     x3, y3 = point3
-    if ((x3 <= max(x1, x2)) and (x3 >= min(x1, y2)) and (y3 <= max(y1, y2)) and (y3 >= min(y1, y2))): 
+    if (min(x1, x2) <= x3 <= max(x1, x2) and min(y1, y2) <= y3 <= max(y1, y2)): 
         return True
     return False
 
@@ -88,10 +88,10 @@ def is_intersection(point1,point2,point3,point4):
     Output:
         - True if intersection, else False"""
     
-    o1=orientation(point1,point2,point3)
-    o2=orientation(point1,point2,point4)
-    o3=orientation(point3,point4,point1)
-    o4=orientation(point3,point4,point2)
+    ori1=orientation(point1,point2,point3)
+    ori2=orientation(point1,point2,point4)
+    ori3=orientation(point3,point4,point1)
+    ori4=orientation(point3,point4,point2)
 
     #If two points are equal, we do not consider them as intersecting since it is the case where 
     #the points belongs to the same object, and this case is taken care of later.
@@ -99,17 +99,17 @@ def is_intersection(point1,point2,point3,point4):
         return False
     
     # If o1 and o2 are different and o3 and o4 are different, then the points intersect
-    if o1 != o2 and o3 != o4:
+    if ori1 != ori2 and ori3 != ori4:
         return True
     
     # Checking colinearity in every case + if the third point is inside the segment
-    if ((o1 == 0) and inside_line(point1, point2, point3)): 
+    if ((ori1 == 0) and inside_line(point1, point2, point3)): 
         return True
-    if ((o2 == 0) and inside_line(point1, point2, point4)): 
+    if ((ori2 == 0) and inside_line(point1, point2, point4)): 
         return True
-    if ((o3 == 0) and inside_line(point3, point4, point1)): 
+    if ((ori3 == 0) and inside_line(point3, point4, point1)): 
         return True
-    if ((o4 == 0) and inside_line(point3, point4, point2)): 
+    if ((ori4 == 0) and inside_line(point3, point4, point2)): 
         return True
     
     return False 
@@ -140,58 +140,34 @@ def point_connection(point1, point2,obstacle_corners,Robot,goal):
         - goal: coordinates of the goal
     Output:
         - True if two points can be connected by a straight line without crossing an obstacle, else False"""
-    
-    points_named = naming_points(obstacle_corners,Robot,goal)
-    obstacle_points = obstacle_points_named(obstacle_corners)
 
-    coordinates = {v: k for k, v in points_named.items()}       #New dictionary inverting the keys and values of points_names
-    
-    # now let's get the names of the given points
-    p1= coordinates[point1] 
-    p2= coordinates[point2] 
+    points_named = naming_points(obstacle_corners, Robot, goal)
+    #obstacle_points = obstacle_points_named(obstacle_corners)
+    coordinates = {i: j for j, i in points_named.items()}  # 
 
-    for _, point_list in obstacle_points.items():
-        if p1 in point_list and p2 in point_list:
-            #If the points are adjacent, they are connected
-            if abs(point_list.index(p1)-point_list.index(p2))==1:
-                return True
-            #If the points are adjacent but one is the first item and the other is the last item in the list
-            if point_list.index(p1)==len(point_list)-1 and point_list.index(p2)==0:
-                return True
-            if point_list.index(p2)==len(point_list)-1 and point_list.index(p1)==0:
-                return True
-            #If the points are in same object but are not adjacent, they are not connected
-            return False
+    p1 = coordinates[point1] 
+    p2 = coordinates[point2] 
 
-    #We go through all objects and check if the line between the two given point  
-    #intersects with any other line between two other points from the same object
     for _, point_list in obstacle_corners.items():
-        for i in range(len(point_list)):
-            if i == (len(point_list) - 1): # the last point of a an obstacle
-                if is_intersection(point1, point2, point_list[i], point_list[0]):
-                    return False
-            else:
-                #Ignore the points if they are equal to point1 or point2
-                if point_list[i] == point1 or point_list[i+1] == point2:                    #always used in order
-                    continue
-                else:
-                    if is_intersection(point1, point2, point_list[i], point_list[i + 1]):
-                        return False
-                    
-    if (p1 == 'R' or p2 == 'R'):
-        #same as above
-        for _, point_list in obstacle_corners.items():
+        # Check if both points are in the same obstacle
+        if p1 in point_list and p2 in point_list:
+            # and if the points are adjacent, then they are connected for sure
+            if (abs(point_list.index(p1) - point_list.index(p2)) == 1 or (point_list.index(p1) == 0 and point_list.index(p2) == len(point_list) - 1) or (point_list.index(p2) == 0 and point_list.index(p1) == len(point_list) - 1)):
+                return True  
+
+            # Now check if the line between point1 and point2 intersects any obstacle edges
             for i in range(len(point_list)):
-                if i == (len(point_list) - 1):
-                    if is_intersection(point1, point2, point_list[i], point_list[0]): 
+                if i == len(point_list) - 1:  # Last point connects to the first
+                    if is_intersection(point1, point2, point_list[i], point_list[0]):
                         return False
                 else:
-                    if point_list[i] == point1 or point_list[i+1] == point2:         
-                        continue
-                    else:
-                        if is_intersection(point1, point2,point_list[i], point_list[i + 1]):
-                            return False
-    return True
+                    if point_list[i] == point1 or point_list[i + 1] == point2:
+                        continue  # Skip if it's the same as the input points
+                    if is_intersection(point1, point2, point_list[i], point_list[i + 1]):
+                        return False  # Intersection detected
+
+    return True  # No intersection found, the points can be connected
+
 
 
 def creating_adjacency_dictionnary(object_corners,robot,goal):
@@ -258,7 +234,7 @@ def dijkstra_algo(adjacency_dict, points_named):
         - previous_nodes: dictionnary with key : point name, value : distance of the path
     """
     # Used the template from this website : https://www.udacity.com/blog/2021/10/implementing-dijkstras-algorithm-in-python.html
-    shortest_dist = {} # it will store the best known cost of visiting each city, key : point name, value : distance 
+    shortest_dist = {} # it will store the best known cost of getting to each node, key : point name, value : distance 
     previous_nodes = {} # it will store the best know path for each node, key : point name, value : best previous point name in the paths
     unvisited = list(points_named.keys())
     distance_dict = calculating_distances(adjacency_dict, points_named)
