@@ -81,10 +81,10 @@ def get_robot_position(frame):
     robot_width = int(max(tilted_rect[1]))
 
     # approximate the contour roughly and more precisely
-    epsilon = 0.03 # precision of polygonal approximation, smaller is more precise
+    epsilon = 0.02 # precision of polygonal approximation, smaller is more precise
     perimeter = cv.arcLength(c, True)
     curved_approximation = cv.approxPolyDP(c, epsilon * perimeter, True)
-    epsilon = 0.05
+    epsilon = 0.03
     straight_approximation = cv.approxPolyDP(c, epsilon * perimeter, True)
 
     # get the curved part of Thymio by checking the difference between the two contours
@@ -303,3 +303,14 @@ def get_further_vertices(frame, robot_width, polygonal_obstacles):
         further_vertices.append(polygon_vertices)
 
     return further_vertices
+
+
+""" # load the image
+img = cv.imread("nique.png")
+img = cv.resize(img, (640,480), interpolation=cv.INTER_CUBIC) 
+
+original_coordinates, new_coordinates = get_fop_coordinates(img)
+fop = get_fop(img, original_coordinates, new_coordinates)
+start_x, start_y, robot_angle, width = get_robot_position(fop)
+obstacles = get_obstacles(fop, width)
+objective_x, objective_y = get_objective(fop) """

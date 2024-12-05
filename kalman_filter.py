@@ -17,8 +17,8 @@ def convert_input(robot):
     delta_angle = (0.1667 * (robot.rspeed - robot.lspeed) + 8.33) * np.pi / 180
 
     angle = float(robot.alpha)
-    delta_x = np.sin(angle) * linear_velocity
-    delta_y = np.cos(angle) * linear_velocity
+    delta_x = np.cos(angle) * linear_velocity
+    delta_y = np.sin(angle) * linear_velocity
     
     return [delta_x, delta_y, delta_angle]
 
