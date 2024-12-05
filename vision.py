@@ -75,7 +75,7 @@ def get_robot_position(frame):
     copy = frame.copy()
 
     # threshold on the grayscale image and find the contour of the white shapes
-    _, thresholded_blue = cv.threshold(copy[:,:,0], 127,255,cv.THRESH_BINARY)
+    _, thresholded_blue = cv.threshold(copy[:,:,0], 150,255,cv.THRESH_BINARY)
     contours, _ = cv.findContours(thresholded_blue, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
 
     c = get_largest_contours(contours)
@@ -186,31 +186,3 @@ def get_objective(frame):
     objective_x, objective_y = get_contour_center(c)
 
     return objective_x, objective_y
-
-""" # Vision example on an image
-
-# load the image
-img = cv.imread("new_setup.png")
-img = cv.resize(img, (640,480), interpolation=cv.INTER_CUBIC) 
-
-# do the actual vision
-original_coordinates, new_coordinates = get_fop_coordinates(img)
-fop = get_fop(img, original_coordinates, new_coordinates)
-
-start_x, start_y, alpha, width = get_robot_position(fop)
-obstacles = get_obstacles(fop,width)
-objective_x, objective_y = get_objective(fop)
-
-# draws everything and displays it
-output = fop.copy()
-cv.circle(output, (objective_x, objective_y), radius=10, color=(255, 0, 0), thickness=-1)
-cv.circle(output, (start_x, start_y), radius=10, color=(0, 0, 255), thickness=-1)
-for obstacle in obstacles:
-    for vertice in obstacle:
-        cv.circle(output, (vertice[0],vertice[1]), radius=10, color=(0, 255, 0), thickness=-1)
-
-cv.imshow("image", output)
-
-# press any key to close all windows
-cv.waitKey(0) 
-cv.destroyAllWindows() """

@@ -6,10 +6,10 @@ import time
 # Global constants here
 
 KP_LINEAR = 10 # linear proportional gain in PI controller
-KI_LINEAR = 0.1 # linear integral gain in PI controller
-KP_ANGULAR = 15 # angular proportional gain in PI controller
-KI_ANGULAR = 0.1 # angular integral gain in PI controller
-PATH_DELTA = 10 # acccepted difference in pixels between the actual robot's position and its goal
+KI_LINEAR = 0 # linear integral gain in PI controller
+KP_ANGULAR = 10 # angular proportional gain in PI controller
+KI_ANGULAR = 0 # angular integral gain in PI controller
+PATH_DELTA = 7 # acccepted difference in pixels between the actual robot's position and its goal
 ANGULAR_DELTA = 0.15 # accepted difference in radian between the actual robot's angle and its goal
 TURNING_SPEED = 100 # speed of the wheel when turning
 STRAIGHT_SPEED = 150 # speed of the wheel when going straight
@@ -161,14 +161,14 @@ def compute_wheel_speed(initial_turn, start_point, end_point, next_point, error_
 
     # do the initial orientation
     if initial_turn:
-        
+        print('init turn')
         # turning
-        error_angle = get_angular_error(end_point, next_point, robot_angle)
+        error_angle = get_angular_error(start_point, end_point, robot_angle)
         left_wheel_speed = -1 * np.sign(error_angle) * TURNING_SPEED
         right_wheel_speed = np.sign(error_angle) * TURNING_SPEED
         
         # first turn is done
-        if get_angular_error(end_point, next_point, robot_angle) < ANGULAR_DELTA:
+        if get_angular_error(start_point, end_point, robot_angle) < ANGULAR_DELTA:
             initial_turn = False
             left_wheel_speed = 0
             right_wheel_speed = 0
@@ -205,18 +205,8 @@ def compute_wheel_speed(initial_turn, start_point, end_point, next_point, error_
             error_linear = np.append(error_linear, get_linear_error(start_point, end_point,robot_center))
             error_angle = np.append(error_angle, get_angular_error(start_point, end_point, robot_angle))
             
-            if error_linear[-1] < 5:
-                linear_input = 0
-            else:
-                linear_input = PI_controller(error_linear, KP_LINEAR, KI_LINEAR)
-
-            #if error_angle[-1] < 0.1:
-            #    angular_input = 0
-            #else:
-            angular_input = PI_controller(error_angle, KP_ANGULAR, KI_ANGULAR)
-
-            left_wheel_speed = STRAIGHT_SPEED - angular_input + linear_input
-            right_wheel_speed = STRAIGHT_SPEED + angular_input - linear_input
+            left_wheel_speed = STRAIGHT_SPEED - PI_controller(error_angle, KP_ANGULAR, KI_ANGULAR) + PI_controller(error_linear, KP_LINEAR, KI_LINEAR)
+            right_wheel_speed = STRAIGHT_SPEED + PI_controller(error_angle, KP_ANGULAR, KI_ANGULAR) - PI_controller(error_linear, KP_LINEAR, KI_LINEAR)
             
             # limit the maximum speed of the wheels
             if left_wheel_speed > MAX_STRAIGHT_SPEED: left_wheel_speed = MAX_STRAIGHT_SPEED
