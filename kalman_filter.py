@@ -1,24 +1,35 @@
 import numpy as np
-from Controlling_thymio import Robot
-import math
 
 DISTANCE_WHEEL = 90 # distance between the wheels in mm
 CAMERA_FPS = 30 # fps of the video feed
-DISTANCE_MM_S = 1
+DISTANCE_MM_S = 1 # distance done in mm/s per 1 PMW
 
 def convert_input(robot):
-
+    """
+    Convert B*u, the effect of the system input
+    Input:
+        robot: an instance of the class Robot
+    """
+    # convert the speed values of the wheel to pixel
     linear_velocity = (robot.lspeed + robot.rspeed)/2 * DISTANCE_MM_S / CAMERA_FPS * robot.robot_width / DISTANCE_WHEEL
+    delta_angle = np.arcsin(float((robot.lspeed - robot.rspeed) * DISTANCE_MM_S / CAMERA_FPS / DISTANCE_WHEEL))
+    
     angle = float(robot.alpha)
-
     delta_x = np.cos(angle) * linear_velocity
     delta_y = np.sin(angle) * linear_velocity
-
-    delta_angle = np.arcsin(float((robot.lspeed - robot.rspeed) * DISTANCE_MM_S / CAMERA_FPS / DISTANCE_WHEEL))
-
-    print("delta angle: ", delta_angle)
-
+    
     return [delta_x, delta_y, delta_angle]
+
+def check_angle(angle):
+    """
+    Check that the type of the angle is the right one
+    Input:
+        - angle: angle of the robot
+    """
+    if isinstance(angle, np.ndarray):
+        return float(angle[0])
+    else:
+        return float(angle)
 
 
 class KalmanFilter:
@@ -27,22 +38,31 @@ class KalmanFilter:
         self.F = np.array([[1.0, 0, 0], [0, 1.0, 0], [0, 0, 1.0]]) # state transition model
         self.H = np.array([[1.0, 0, 0], [0, 1.0, 0], [0, 0, 1.0]]) # observation model
         self.Q = np.array([[1.0, 0, 0], [0, 1.0, 0], [0, 0, 1.0]]) # process noise covariance
-        self.R = np.array([[1.0, 0, 0], [0, 1.0, 0], [0, 0, 1.0]]) # measurement noise covariance
+        self.R = np.array([[5.0, 0, 0], [0, 5.0, 0], [0, 0, 1.0]]) # measurement noise covariance
         self.P = np.array([[1.0, 0, 0], [0, 1.0, 0], [0, 0, 1.0]]) # initial error covariance  
         self.x = x0 # initial state, shape [x,y,alpha]
 
-    # u shape [speed_x, speed_y, speed_angular]
     def predict(self, converted_input):
+        """
+        Use the Kalman filter to make a prediction of the future state
+        Input:
+            - converted_input: B*u, the effect of the system input
+        """
         self.x = self.F @ self.x + converted_input
         self.P = self.F @ self.P @ self.F.transpose() + self.Q
 
+        # to keep the angle bewteen )-pi;pi]
         if self.x[2][0] > np.pi:
              self.x[2][0] -= 2*np.pi
         elif self.x[2][0] < -np.pi:
             self.x[2][0] += 2*np.pi
-
-    # z shape [x,y,alpha]
+ 
     def update(self, z):
+        """
+        Update the Kalman filter using observations to make better estimations
+        Input:
+            - z: observation of the robot, shape [x,y,alpha]
+        """
         y = z - self.H @ self.x
         S = self.H @ self.P @ self.H.transpose() + self.R   
         K = self.P @ self.H.transpose() @ np.linalg.inv(S)
@@ -50,6 +70,7 @@ class KalmanFilter:
         I = np.eye(self.P.shape[0])
         self.P = (I - K @ self.H) @ self.P
 
+        # to keep the angle bewteen )-pi;pi]
         if self.x[2][0] > np.pi:
              self.x[2][0] -= 2*np.pi
         elif self.x[2][0] < -np.pi:
