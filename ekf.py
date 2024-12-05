@@ -56,11 +56,11 @@ class ExtendedKalmanFilter:
                 #set time
         self.set_time_t(time.time())
         #process noise covariance matrix 
-        self.Q = np.diag([10*2, 10*2, QAN,  8.4*4, 10.9*4]) 
+        self.Q = np.diag([5, 3, 0.01,  0.05, 0.04]) 
         #self.Q = np.eye(5) 
 
         #measurement noise covariance matrix
-        self.R_camera = np.diag([5, 5, 0.15, 8.4, 9.67])  
+        self.R_camera = np.diag([2.03, 2.07, 0.15, 8.4, 9.67])  
   
         self.R_no_cam = np.diag([8.4, 9.67])  
         #initialize the state covariance matrix)

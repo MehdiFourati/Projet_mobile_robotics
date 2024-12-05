@@ -75,7 +75,7 @@ def get_robot_position(frame):
     copy = frame.copy()
 
     # threshold on the grayscale image and find the contour of the white shapes
-    _, thresholded_blue = cv.threshold(copy[:,:,0], 150,255,cv.THRESH_BINARY)
+    _, thresholded_blue = cv.threshold(copy[:,:,0], 100, 255,cv.THRESH_BINARY)
     contours, _ = cv.findContours(thresholded_blue, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
 
     c = get_largest_contours(contours)
